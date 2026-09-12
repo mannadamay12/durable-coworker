@@ -14,6 +14,13 @@
 - `commit` can return `{ reused: false, status: "approved" }` when a concurrent click
   already holds the attempt (under 30s). Render as "sending", not as an error.
 - `commit` never runs later steps. If a step follows the send, re-trigger `workorder`.
+- `deny` throws a plain `Error` when the send is already committed or in flight, or the
+  step id is unknown. Render every error from core as a card, not only `NotAuthorizedError`.
+- Do not call `putWorkOrder` after creation: it is last-write-wins on the whole work order,
+  so writing back an old copy can show a committed step as `waiting_human` again (nothing
+  is resent; the ledger stays committed).
+- Trigger `workorder` for a `woId` only after the previous run is CANCELED or finished. Two
+  concurrent runs never send, but they re-run reversible steps and spoil the on-screen count.
 
 ## Decisions that constrain others (for DECISIONS.md)
 
