@@ -69,6 +69,16 @@ export function renderWorkOrder(wo: WorkOrder): string {
   });
   lines.push("");
 
+  const draft = [...wo.steps].reverse().find((s) => s.tool === "draft" && s.output)?.output;
+  lines.push("## Draft", "", draft ? draft.split("\n").map((l) => `> ${l}`).join("\n") : "No draft yet.", "");
+
+  const proposal = wo.commits.find((e) => e.status !== "committed" && e.status !== "rejected");
+  if (proposal) {
+    const a = (proposal.args ?? {}) as Record<string, unknown>;
+    const target = a.to ? `to ${String(a.to)}: "${String(a.subject)}"` : "";
+    lines.push("## Proposed action", "", `${proposal.tool} ${target} (${proposal.status.toUpperCase()})`, "");
+  }
+
   lines.push("## Ledger", "");
   if (wo.commits.length === 0) {
     lines.push("No commits proposed yet.");

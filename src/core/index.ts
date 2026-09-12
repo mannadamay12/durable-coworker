@@ -238,7 +238,8 @@ export function pendingApproval(wo: WorkOrder): { step: Step; entry: LedgerEntry
   const step = wo.steps.find((s) => s.status === "waiting_human");
   if (!step) return undefined;
   const entry = entryFor(wo, step.id);
-  if (!entry || (entry.status !== "proposed" && entry.status !== "approved")) return undefined;
+  // outcome_unknown stays pending: a human must retry, which reconciles before sending again.
+  if (!entry || !["proposed", "approved", "outcome_unknown"].includes(entry.status)) return undefined;
   return { step, entry };
 }
 
@@ -370,7 +371,7 @@ export async function commit(woId: string, stepId: string, actor: string): Promi
   }
   if (!externalId) {
     withDb((db) =>
-      db.prepare("UPDATE ledger SET status = 'outcome_unknown' WHERE idempotency_key = ?").run(key),
+      db.prepare("UPDATE ledger SET status = 'outcome_unknown' WHERE idempotency_key = ? AND status != 'committed'").run(key),
     );
     log(`${woId} ${stepId} OUTCOME UNKNOWN: no id returned; reconcile before retrying`);
     return { reused: false, status: "outcome_unknown", idempotencyKey: key };

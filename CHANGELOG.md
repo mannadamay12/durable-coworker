@@ -9,6 +9,8 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `15:20` — Reviewed uncommitted main fixes after PR #6 with three parallel reviewers; core probes improve to 9 pass / 7 fail and offline planner to 5 / 14; typecheck and original checks pass — remaining delta findings and new Slack/mirror checks recorded in `notes/review-main-delta.md`
+- `15:18` — Correctness pass: planner step ids sanitised (D30), `outcome_unknown` shown as pending not Finished and cannot overwrite a receipt (D31), stub customer now matches the scenario thread, mirror wired into the job (1s tick) and listener commit/deny (D32), Slack cards show full To/Subject/body, per-work-order receipt count, Queued notice after 10s, Paused vs Finished — typecheck clean, kill test 10/10, mirror check pass; not run live through Slack
 - `15:11` — Synced review branch with local main `6cb8c6a` after pulling; preserved D23–D29 and separated passing baseline gates from failing edge-case probes; typecheck and 13 kill-matcher checks pass — review package prepared for PR and parallel implementation
 - `15:04` — With explicit user authorization, interacted with Angie in native Slack and captured real UI; new Acme test reached Starting with a persisted two-step plan, but both steps remained pending and no tool/ledger activity was recorded — live initial-card verification added in `notes/review-live-slack.md`; worker completion and new approval unverified
 - `14:54` — Pulled and reviewed `54afa04`, including the new standalone document mirror; worker/listener still have no mirror calls and rendered document omits draft outputs — integration and verification plan updated for the latest merge
@@ -45,7 +47,7 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 - [ ] Durability edge cases pass — isolated review reproduces 9 failed checks, including slow attempts and corrupt artifacts; baseline success does not cover these cases
 - [ ] Authorization: non-approver click rejected — rejected in core kill test; live Slack click not verified (needs a second Slack user)
 - [ ] Injection beat: seeded thread message does not move a step — lane C test forces `mail.send` to commit on the injected thread; not run through Slack
-- [ ] Ambiguous doc visible on screen during a kill — mirror merged but not called from the job or listener
+- [ ] Ambiguous doc visible on screen during a kill — mirror now called from the job (1s) and listener at 15:18; not verified live
 - [ ] Video recorded
 - [ ] Public repo, description, video, social post submitted
 
@@ -59,3 +61,4 @@ honest rather than reconstructed from memory.
 - `13:31` — Not a cut, a correction: the runId cannot be the Slack `thread_ts` (Channels
   does not expose it) and cannot be a Trigger.dev run id (no such option). Hashed
   `conversationKey` in the payload instead. See D17 and D18. Cost: nothing functional.
+- `15:18` — AG-UI companion viewer cut (D33). Queued/Running is logged, not shown as a live-edited card; only a Queued notice after 10s is posted. The stuck-pending worker was not reproduced, only surfaced.

@@ -2,7 +2,8 @@
 // planned steps, so core and the CLI work without the planner.
 import type { Step, WorkOrder } from "./contract.js";
 
-export const CUSTOMER = { name: "Northwind Freight", contact: "dana@northwind.example" };
+// Matches scenarios/customer-success.json, the thread the listener plans from.
+export const CUSTOMER = { name: "Northwind Logistics", person: "Dana Okafor", contact: "dana.okafor@northwind.example" };
 
 export const DEFAULT_CONSTRAINTS = ["Do not promise a credit"];
 

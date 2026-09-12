@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk";
 
 import { getWorkOrder, pendingApproval, runReversible } from "../core/index.js";
+import { mirror, mirrorSoon } from "../mirror/index.js";
 
 /**
  * Runs a work order's reversible steps and stops at the first commit step.
@@ -20,7 +21,15 @@ export const workorderTask = task({
     const before = getWorkOrder(woId);
     logger.log(`[${woId}] start: ${before.steps.map((s) => `${s.id}=${s.status}`).join(" ")}`);
 
-    const wo = await runReversible(woId);
+    // The mirror is the on-camera view of progress; poll it so a kill mid-step is visible.
+    const ticker = setInterval(() => mirrorSoon(getWorkOrder(woId)), 1000);
+    let wo;
+    try {
+      wo = await runReversible(woId);
+    } finally {
+      clearInterval(ticker);
+    }
+    await mirror(wo);
     const pending = pendingApproval(wo);
     logger.log(
       pending
