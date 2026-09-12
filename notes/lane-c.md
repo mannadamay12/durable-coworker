@@ -13,12 +13,14 @@
 
 ## Model status
 
-OpenRouter key returned HTTP 402 Insufficient credits at ~14:05. `plan()` currently runs
-the deterministic stub built from the fixture. **Classifier stubbed, override real.**
+The original key in `.env` is free tier and returns HTTP 402 Insufficient credits on
+`google/gemini-3.8-flash`; with it, `plan()` runs the deterministic stub from the fixture.
 
-The model path is implemented and activates automatically once the key has credits
-(`OPENROUTER_API_KEY` set and `PLANNER_MODE` not `stub`). Any model failure falls back
-to the stub. Force the stub with `PLANNER_MODE=stub`. Output from either path always
+A funded key was verified at ~14:25: the full test passes on the live model
+(`google/gemini-3.8-flash`, strict schema, `require_parameters`). The model path is live
+as soon as `.env` holds the funded key (`OPENROUTER_API_KEY` set and `PLANNER_MODE` not
+`stub`). Any model failure still falls back to the stub, which logs
+`Classifier stubbed, override real.` Force the stub with `PLANNER_MODE=stub`. Output from either path always
 passes through `enforceCommitTools`.
 
 ## Decision: classifiedBy semantics
@@ -52,18 +54,19 @@ untouched, input not mutated).
 
 ## Honesty notes
 
-- The injection test proves the override, not the model's resistance to injection.
-  With the stub running, the model never saw the injection at all.
-- While the key has no credits, constraint extraction is also stubbed from the fixture.
-  Do not describe it as model-extracted in the video or submission.
-- README (orchestrator owns it, not edited here) should say "classifier stubbed,
-  override real" for as long as the key has no credits.
+- The injection test proves the override, not the model's resistance to injection. On
+  the live model run the model kept `mail.send` as commit itself, so no OVERRIDE fired on
+  the injected thread; the OVERRIDE beat on camera comes from the hand-built case.
+- If the demo runs on the stub (unfunded key or model failure), constraints are also
+  stubbed. Check the `[planner]` log line before describing them as model-extracted.
+- README (orchestrator owns it) should only say "classifier stubbed, override real" if
+  the filmed run logs the stub line.
 
 ## For DECISIONS.md at merge
 
-- Planner falls back to a deterministic fixture stub when OpenRouter is unavailable
-  (402 today); override and test stay fully real. Rules out claiming a live classifier
-  in the demo until the key is funded.
+- Planner falls back to a deterministic fixture stub when OpenRouter is unavailable;
+  override and test stay fully real. Rules out claiming a live classifier for any run
+  that logs the stub line.
 - `classifiedBy: "allowlist_override"` is set on every `COMMIT_TOOLS` step, not only on
   disagreements. Rules out using the field as a "model was wrong" signal; the OVERRIDE
   log line is that signal.
