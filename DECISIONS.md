@@ -416,3 +416,12 @@ identity cannot be mapped.
 Rules out: silently planning from Northwind for a long arbitrary mention, inventing
 Slack accounts, or letting a source-selection race replace an already grounded
 conversation.
+
+## D41. Submission text describes approval as a ledger record, not a waitpoint
+
+The PRD and README said the Decision guarantee lives in a Trigger.dev waitpoint completed
+by a Slack click. The worker instead returns at the proposal boundary, and the click runs
+the committer directly and triggers a new run (see `notes/review-slack-ui.md`). README and
+`SUBMISSION.md` now describe what is built.
+
+Rules out: claiming a waitpoint-backed approval in the submission, video or social posts.
