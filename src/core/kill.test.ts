@@ -83,6 +83,10 @@ assert.equal(second.externalId, first.externalId);
 assert.equal(outboxRows().length, 1);
 pass("retry returns the same receipt, outbox still 1");
 
+assert.throws(() => core.deny(WO, SEND, APPROVER), /already committed or being sent/);
+assert.equal(core.getWorkOrder(WO).steps.find((s) => s.id === SEND)?.status, "committed");
+pass("deny after the send is refused; step stays committed");
+
 // Crash window: the send landed, the ledger write did not. Reconcile, do not resend.
 const R = "WO-RECON";
 core.createWorkOrder({ id: R, scenario: "customer-success", threadRef: "recon", approvers: [APPROVER] });

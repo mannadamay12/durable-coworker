@@ -262,10 +262,17 @@ export function deny(woId: string, stepId: string, actor: string): WorkOrder {
   const wo = getWorkOrder(woId);
   authorize(wo, actor);
   const entry = entryFor(wo, stepId);
-  if (entry?.status === "committed") throw new Error(`${stepId} is already committed; it cannot be denied`);
+  if (!wo.steps.some((s) => s.id === stepId)) throw new Error(`${woId} has no step ${stepId}`);
   return withDb((db) =>
     tx(db, () => {
       if (entry) {
+        // Re-read under the lock: a commit may have claimed the send since `wo` was read.
+        const row = db
+          .prepare("SELECT status, attempted_at FROM ledger WHERE idempotency_key = ?")
+          .get(entry.idempotencyKey) as Row | undefined;
+        if (row && (row.status === "committed" || row.attempted_at !== null)) {
+          throw new Error(`${stepId} is already committed or being sent; it cannot be denied`);
+        }
         db.prepare(
           "UPDATE ledger SET status = 'rejected', approved_by = ? WHERE idempotency_key = ? AND status IN ('proposed', 'approved')",
         ).run(actor, entry.idempotencyKey);
