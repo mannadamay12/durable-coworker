@@ -14,6 +14,7 @@ import {
   runReversible,
 } from "./core/index.js";
 import { outboxRows } from "./core/inspect.js";
+import { RECOVERY_BEATS, type RecoveryBeat, buildRecovery, createFromThread } from "./core/recovery.js";
 
 const argv = process.argv.slice(2);
 const command = argv[0] ?? "help";
@@ -23,14 +24,19 @@ const flag = (name: string, fallback: string) => {
 };
 
 const APPROVERS = (process.env.APPROVERS ?? "U_MAYA").split(",").map((s) => s.trim()).filter(Boolean);
-const woId = flag("wo", "WO-1842");
+const thread = flag("thread", "");
+const woId = flag("wo", thread ? `WO-${thread}` : "WO-1842");
 const actor = flag("actor", APPROVERS[0]);
 
 function ensure(): WorkOrder {
-  return (
-    findWorkOrder(woId) ??
-    createWorkOrder({ id: woId, scenario: "customer-success", threadRef: woId, approvers: APPROVERS })
-  );
+  const existing = findWorkOrder(woId);
+  if (existing) return existing;
+  if (thread) {
+    const wo = createFromThread(thread, { id: woId });
+    if (!wo) process.exit(1);
+    return wo;
+  }
+  return createWorkOrder({ id: woId, scenario: "customer-success", threadRef: woId, approvers: APPROVERS });
 }
 
 function show(wo: WorkOrder): void {
@@ -96,6 +102,16 @@ switch (command) {
     }
     break;
   }
+  case "load": {
+    const beat = argv[1] as RecoveryBeat;
+    if (!RECOVERY_BEATS.includes(beat)) {
+      console.log(`load one of: ${RECOVERY_BEATS.join(" | ")}`);
+      break;
+    }
+    reset();
+    show(await buildRecovery(beat));
+    break;
+  }
   case "outbox":
     for (const row of outboxRows()) console.log(`--- ${row.id} (${row.tool}) ${row.sentAt}\n${row.body}\n`);
     break;
@@ -109,5 +125,7 @@ switch (command) {
     show(getWorkOrder(woId));
     break;
   default:
-    console.log("commands: reset | create | run | show | approve | commit | deny | outbox | demo  [--wo ID] [--actor SLACK_ID]");
+    console.log(
+      "commands: reset | create | run | show | approve | commit | deny | outbox | demo | load <beat>  [--wo ID] [--thread THREAD-ID] [--actor SLACK_ID]",
+    );
 }

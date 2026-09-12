@@ -1,5 +1,6 @@
 // Tool registry: name -> tool. Commit tools live here and are never handed to a model.
 import { COMMIT_TOOLS, type Step, type ToolFn, type WorkOrder } from "../core/contract.js";
+import { constraintsFor, draftFor, loadContext, threadText } from "../core/context.js";
 import { CUSTOMER } from "../core/fixtures.js";
 import { outboxTool } from "./outbox.js";
 
@@ -25,12 +26,27 @@ const RESEARCH: Record<string, string> = {
 };
 
 const reversibleTools: Record<string, ReversibleTool> = {
-  search: async ({ step }) => {
+  search: async ({ wo, step }) => {
     await pause();
+    const ctx = loadContext(wo.scenario);
+    if (ctx && /read|context|account|customer/.test(step.id)) {
+      const contacts = ctx.customer.contacts.map((c) => `${c.name} (${c.title}, ${c.email})`).join("; ");
+      return `${ctx.customer.name} [${ctx.customer.tier}]: ${contacts}\nConstraints: ${constraintsFor(ctx).join("; ")}\n\n${threadText(ctx)}`;
+    }
+    if (ctx) {
+      const cites = ctx.research?.citations ?? [];
+      return cites.length ? cites.map((c) => `${c.title} <${c.url}>: ${c.highlight}`).join("\n") : `No research on file for ${ctx.thread.id}.`;
+    }
     return /account|context|customer/.test(step.id) ? RESEARCH.account : RESEARCH.default;
   },
   draft: async ({ wo }) => {
     await pause();
+    const ctx = loadContext(wo.scenario);
+    if (ctx) {
+      const draft = draftFor(ctx);
+      if (draft instanceof Error) throw draft;
+      return draft.body;
+    }
     return [
       `Hi ${CUSTOMER.person.split(" ")[0]},`,
       ``,
@@ -46,6 +62,9 @@ const reversibleTools: Record<string, ReversibleTool> = {
   },
   "tasks.create": async ({ wo }) => {
     await pause();
+    const ctx = loadContext(wo.scenario);
+    // Ids derive from (workOrder, position), so a re-run after a kill yields the same tasks.
+    if (ctx) return ctx.tasks.map((t, i) => `TASK-${wo.id}-${i + 1} ${t.title} (${t.assignee})`).join("\n");
     return `Created 2 follow-ups on ${wo.id}: incident report due tomorrow, cert expiry alerting.`;
   },
   write_to_work_order: async ({ wo, step }) => {

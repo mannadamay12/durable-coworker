@@ -1,6 +1,22 @@
 // Default customer-success work order (PRD section 2). Used when the caller supplies no
 // planned steps, so core and the CLI work without the planner.
-import type { Step, WorkOrder } from "./contract.js";
+import { COMMIT_TOOLS, type Step, type WorkOrder } from "./contract.js";
+import { type Context, draftFor, loadContext } from "./context.js";
+
+function groundedArgs(ctx: Context, commitStep: Step, drafted: string | undefined): Record<string, unknown> {
+  const tool = commitStep.tool ?? "";
+  if (!COMMIT_TOOLS.has(tool)) throw new Error(`${tool} has no registered commit tool`);
+  const draft = draftFor(ctx);
+  if (draft instanceof Error) throw draft;
+  if (!drafted) throw new Error("no draft recorded on the work order");
+  if (tool === "mail.send") {
+    if (!ctx.customer.contacts.some((c) => c.email === draft.to)) {
+      throw new Error(`recipient ${draft.to} is not a contact of ${ctx.customer.name}`);
+    }
+    return { to: draft.to, subject: draft.subject, body: drafted };
+  }
+  return { target: ctx.thread.commitTarget, customer: ctx.customer.id, detail: drafted };
+}
 
 // Matches scenarios/customer-success.json, the thread the listener plans from.
 export const CUSTOMER = { name: "Northwind Logistics", person: "Dana Okafor", contact: "dana.okafor@northwind.example" };
@@ -24,9 +40,14 @@ export const DEFAULT_STEPS: readonly Step[] = [
   step("5-send-customer-update", "Send the customer update", "commit", "mail.send"),
 ];
 
-/** Fixed at proposal time, so the approver approves exactly what the committer sends. */
+/**
+ * Fixed at proposal time, so the approver approves exactly what the committer sends.
+ * Throws when a grounded payload cannot be built; the caller fails the step instead of proposing.
+ */
 export function commitArgs(wo: WorkOrder, commitStep: Step): Record<string, unknown> {
   const drafted = [...wo.steps].reverse().find((s) => s.tool === "draft" && s.output)?.output;
+  const ctx = loadContext(wo.scenario);
+  if (ctx) return groundedArgs(ctx, commitStep, drafted);
   if (commitStep.tool === "mail.send") {
     return {
       to: CUSTOMER.contact,

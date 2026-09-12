@@ -1,0 +1,49 @@
+{
+  "customers": [
+    {
+      "id": "CUST-ACME",
+      "name": "Acme Robotics",
+      "tier": "enterprise",
+      "domain": "acme-robotics.example",
+      "contacts": [
+        { "name": "Dana Park", "title": "CTO", "email": "dana@acme-robotics.example" },
+        { "name": "Owen Blake", "title": "VP Ops", "email": "owen@acme-robotics.example" }
+      ],
+      "arr": 420000,
+      "doNot": ["promise a credit", "share RCA before legal review"]
+    },
+    {
+      "id": "CUST-HELIX",
+      "name": "Helix Health",
+      "tier": "enterprise",
+      "domain": "helix-health.example",
+      "contacts": [
+        { "name": "Dr. Irina Volkov", "title": "CISO", "email": "irina@helix-health.example" }
+      ],
+      "arr": 890000,
+      "doNot": ["send PHI", "use personal email", "commit to a date legal has not signed"]
+    },
+    {
+      "id": "CUST-LANTERN",
+      "name": "Lantern Analytics",
+      "tier": "mid-market",
+      "domain": "lantern.example",
+      "contacts": [
+        { "name": "Chris Ng", "title": "Head of Procurement", "email": "chris@lantern.example" }
+      ],
+      "arr": 96000,
+      "doNot": ["discount below 18%", "cc the founder"]
+    },
+    {
+      "id": "CUST-NORTHWIND",
+      "name": "Northwind Logistics",
+      "tier": "enterprise",
+      "domain": "northwind.example",
+      "contacts": [
+        { "name": "Ava Rahman", "title": "Director of Reliability", "email": "ava@northwind.example" }
+      ],
+      "arr": 310000,
+      "doNot": ["declare the incident resolved", "tweet before status page"]
+    }
+  ]
+}

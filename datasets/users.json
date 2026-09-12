@@ -1,0 +1,49 @@
+{
+  "workspace": "northstar-cs",
+  "note": "Slack user IDs are fake but stable. Only approvers[] on a work order can move proposed → approved.",
+  "users": [
+    {
+      "slackUserId": "U_MAYA",
+      "name": "Maya Chen",
+      "role": "Customer Success Manager",
+      "email": "maya@northstar.example",
+      "isApproverDefault": true
+    },
+    {
+      "slackUserId": "U_JULES",
+      "name": "Jules Okonkwo",
+      "role": "On-call engineer",
+      "email": "jules@northstar.example",
+      "isApproverDefault": false
+    },
+    {
+      "slackUserId": "U_PRIYA",
+      "name": "Priya Shah",
+      "role": "Account Executive",
+      "email": "priya@northstar.example",
+      "isApproverDefault": true
+    },
+    {
+      "slackUserId": "U_LEO",
+      "name": "Leo Martins",
+      "role": "Legal",
+      "email": "leo@northstar.example",
+      "isApproverDefault": true
+    },
+    {
+      "slackUserId": "U_SAM",
+      "name": "Sam Rivera",
+      "role": "Intern (must never approve)",
+      "email": "sam@northstar.example",
+      "isApproverDefault": false
+    },
+    {
+      "slackUserId": "U_COWORKER",
+      "name": "coworker",
+      "role": "Agent principal",
+      "email": "coworker@agents.northstar.example",
+      "isApproverDefault": false,
+      "isAgent": true
+    }
+  ]
+}

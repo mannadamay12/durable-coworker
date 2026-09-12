@@ -349,3 +349,42 @@ Rules out: applying earlier passing results to later edits, treating imported re
 JSON as tested engine state, or calling a characterization suite a correctness gate
 without updating its expectations. This is a verification policy; it introduces no
 application behavior or new runtime architecture.
+
+## D35. A dataset thread id in `WorkOrder.scenario` is the grounding key
+
+`contract.ts` stays frozen. When `scenario` names a thread in `datasets/threads.json`,
+research, draft, tasks, constraints and the frozen proposal all come from that thread and
+its customer (`src/core/context.ts`). Any other scenario (`customer-success`) keeps the
+Northwind stub unchanged, so the kill test and listener behave as before.
+
+Rules out: a new customer field on the work order, and the executor inventing content
+for a dataset thread.
+
+## D36. No cross-customer fallback; ungroundable commits fail before proposal
+
+If a dataset thread has no source draft, its recipient is not a contact of its customer,
+or its commit tool is not in `COMMIT_TOOLS`, the commit step is marked `failed` and no
+ledger row is written. `THREAD-NORTHWIND-STATUS` (`status.publish`) fails this way on
+purpose. Threads with no customer or no approver (`THREAD-EMPTY`) create no work order.
+`THREAD-ACME-REFUND` has no source draft in the pack, so it uses a decline template
+built only from the thread and customer fields.
+
+Rules out: substituting another customer's draft or recipient to reach an approval card.
+
+## D37. Recovery beats are built by driving the engine, not by loading fixture rows
+
+`buildRecovery(beat)` uses only the thread id, work order id and approvers from
+`work_order_fixtures.json`, then runs the real `runReversible` / `approve` / `commit` /
+`deny` path (the crash window replays the tool call without the ledger write, as the kill
+test does). The fixtures' hand-written ledger keys and statuses are ignored.
+
+Rules out: ledger keys that do not match `idempotencyKey()`, such as the imported
+`WO-1842-KILL` row keyed `WO-1842:...:sha256:acme-dana-v1`.
+
+## D38. Second assertion script: `src/core/scenarios.test.ts`
+
+This relaxes the single assertion script rule for one script. It is the acceptance gate
+for dataset grounding and the README "assertions the tests should lock". It uses the kill
+test's pattern: isolated `STATE_DIR`, plain `assert`, no framework.
+
+Rules out: adding further test files without a similar gate-level reason.

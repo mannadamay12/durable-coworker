@@ -1,0 +1,38 @@
+{
+  "note": "Reversible task creates. Deduped by (workOrderId, title). Kill-resume must not create a second pair.",
+  "templates": {
+    "THREAD-ACME-OUTAGE": [
+      {
+        "title": "Legal review of Acme RCA (internal only)",
+        "assignee": "U_LEO",
+        "customerId": "CUST-ACME"
+      },
+      {
+        "title": "Follow up with Dana after status page goes green",
+        "assignee": "U_MAYA",
+        "customerId": "CUST-ACME"
+      }
+    ],
+    "THREAD-HELIX-SECURITY": [
+      {
+        "title": "Legal sign-off on Helix questionnaire send",
+        "assignee": "U_LEO",
+        "customerId": "CUST-HELIX"
+      }
+    ],
+    "THREAD-LANTERN-PRICING": [
+      {
+        "title": "Priya: wait for Chris reply on Q-3391",
+        "assignee": "U_PRIYA",
+        "customerId": "CUST-LANTERN"
+      }
+    ],
+    "THREAD-NORTHWIND-STATUS": [
+      {
+        "title": "Next status update in 30 minutes",
+        "assignee": "U_JULES",
+        "customerId": "CUST-NORTHWIND"
+      }
+    ]
+  }
+}
