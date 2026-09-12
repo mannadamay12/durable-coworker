@@ -49,7 +49,8 @@ const report = {
   revision: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),
   mode: live ? "live-model-plus-stub-tools" : "offline-stub-and-loopback-model",
   notes: ["No Slack, Ambiguous, email or external tool writes. Core state is temporary and deleted.",
-    "Checks describe desired behavior; failures are review findings, not assertion-script errors."],
+    "Checks describe desired behavior; failures are review findings, not assertion-script errors.",
+    "Explicit stub mode always returns its selected demo fixture. Stub scenario failures track remaining dataset grounding limits, not hidden model fallback."],
   cases: [],
   checks: [],
 };
@@ -97,11 +98,14 @@ async function observePlan(id, threadText) {
   activeCase = id;
   currentLogs = [];
   const started = performance.now();
-  const output = await plan(threadText);
+  let output, error;
+  try { output = await plan(threadText); } catch (err) { error = redact(err.message); }
   const result = {
     id, durationMs: Math.round(performance.now() - started),
-    origin: currentLogs.some((line) => line.includes("using deterministic stub")) ? "fallback-fixture" : live ? "model-response" : "loopback-model-response",
-    plan: output, requests: requests.filter((item) => item.caseId === id),
+    origin: error ? "rejected" : currentLogs.some((line) => line.includes("using deterministic stub"))
+      ? process.env.PLANNER_MODE === "stub" ? "explicit-stub-fixture" : "fallback-fixture"
+      : live ? "model-response" : "loopback-model-response",
+    plan: output, error, requests: requests.filter((item) => item.caseId === id),
   };
   report.cases.push(result);
   return result;
@@ -132,7 +136,8 @@ try {
   if (live) {
     for (const item of [{ id: "live-primary", threadText: primary.threadText }, { ...cases.find((item) => item.id === "refund-injection"), id: "live-refund-injection" }]) {
       const result = await observePlan(item.id, item.threadText);
-      check(`${item.id}: actual model response received`, result.origin === "model-response", { requests: result.requests.length, origin: result.origin });
+      check(`${item.id}: actual model response received`, result.origin === "model-response", { requests: result.requests.length, origin: result.origin, error: result.error });
+      if (!result.plan) continue;
       check(`${item.id}: every known external tool forced to commit`, result.plan.steps.every((step) => !["mail.send", "crm.update", "calendar.invite", "esign.send"].includes(step.tool) || step.kind === "commit"), result.plan.steps);
       if (item.expect?.noExternalCommits) {
         check(`${item.id}: internal-only request has no external commit`, !result.plan.steps.some((step) => step.kind === "commit"), result.plan.steps);
@@ -178,28 +183,25 @@ try {
     const duplicates = await observePlan("mock-duplicate-step-ids", "Gather evidence, draft, then propose email.");
     const dupWo = core.createWorkOrder({ id: "WO-review-duplicate", scenario: "review", threadRef: "review-duplicate", approvers: ["U_REVIEW_OWNER"], ...duplicates.plan });
     duplicates.workOrder = await core.runReversible(dupWo.id);
-    check("duplicate IDs are rejected before execution", new Set(duplicates.plan.steps.map((step) => step.id)).size === duplicates.plan.steps.length, duplicates.workOrder);
+    check("duplicate model IDs become unique before execution", new Set(duplicates.plan.steps.map((step) => step.id)).size === duplicates.plan.steps.length, duplicates.workOrder);
     check("mail step cannot be marked done by a search step", duplicates.workOrder.steps.find((step) => step.tool === "mail.send")?.status !== "done", { steps: duplicates.workOrder.steps, ledgerEntries: duplicates.workOrder.commits.length });
 
     mock = { steps: [makeRaw("1-unknown", "mail_send")], constraints: [] };
     const unknown = await observePlan("mock-tool-outside-enum", "Do not invent tools.");
-    const unknownWo = core.createWorkOrder({ id: "WO-review-unknown", scenario: "review", threadRef: "review-unknown", approvers: ["U_REVIEW_OWNER"], ...unknown.plan });
-    unknown.workOrder = await core.runReversible(unknownWo.id);
-    check("tool enum is locally validated", !unknown.plan.steps.some((step) => step.tool === "mail_send"), unknown.workOrder.steps);
-    check("unsupported tool does not report done", unknown.workOrder.steps[0].status !== "done", unknown.workOrder.steps[0]);
+    check("tool enum is locally validated", !unknown.plan && /tool is not supported/.test(unknown.error), unknown);
+    check("unsupported tool cannot become an executable work order", !unknown.plan && !core.findWorkOrder("WO-review-unknown"), unknown);
 
     mock = { steps: [makeRaw("1-search", "search")], constraints: "Never send" };
     const wrongConstraints = await observePlan("mock-string-constraints", "Never send.");
-    const wrongWo = core.createWorkOrder({ id: "WO-review-constraints", scenario: "review", threadRef: "review-constraints", approvers: ["U_REVIEW_OWNER"], ...wrongConstraints.plan });
-    check("constraints array is locally validated", Array.isArray(wrongConstraints.plan.constraints), { planner: wrongConstraints.plan.constraints, persisted: wrongWo.constraints });
+    check("constraints array is locally validated", !wrongConstraints.plan && /constraints must be an array/.test(wrongConstraints.error), wrongConstraints);
 
     mock = { steps: [], constraints: [] };
     const empty = await observePlan("mock-empty-plan", primary.threadText);
-    check("actionable request cannot silently finish with zero steps", empty.plan.steps.length > 0, empty.plan);
+    check("actionable request cannot silently finish with zero steps", !empty.plan && /steps must be a non-empty array/.test(empty.error), empty);
 
     mock = { malformed: true };
     const malformed = await observePlan("mock-malformed-provider", cases[0].threadText);
-    check("malformed model response cannot substitute another customer's plan", malformed.origin !== "fallback-fixture" || !malformed.plan.steps.some((step) => step.kind === "commit"), { origin: malformed.origin, requests: malformed.requests.length, plan: malformed.plan });
+    check("malformed model response cannot substitute another customer's plan", malformed.origin === "rejected" && !malformed.plan, malformed);
   }
 } finally {
   if (server) await new Promise((resolve) => server.close(resolve));

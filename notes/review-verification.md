@@ -1,5 +1,10 @@
 # Verification and evidence viewer
 
+The commands and expected counts below describe the historical baseline. For the
+post-PR-#7 recovery, planner and mirror fixes, use [the recovery hardening handoff](recovery-hardening.md)
+and its four focused scripts first; the older characterization probes intentionally
+retain unresolved findings.
+
 Run from `/Users/ad12/Documents/Develop/durable-coworker-review` on branch `codex/demo-architecture-review`. The review scripts create their own state and do not load the main worktree's `.env` unless the explicitly live planner command is selected. `npm ci` was completed in this worktree. Review runtime was Node 25.5.0; also validate the pinned Trigger Node 22 runtime before recording a new build.
 
 ## Open the completed experiment

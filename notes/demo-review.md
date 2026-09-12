@@ -2,6 +2,8 @@
 
 Reviewed 2026-09-12 in `codex/demo-architecture-review`, isolated at `/Users/ad12/Documents/Develop/durable-coworker-review`. The baseline moved from `35365f7` through `c564f70` to `54afa04` during review; both approval-card and document-mirror merges were incorporated and reviewed. Three parallel reviewers covered core correctness, Slack/AG-UI, and planner/data/provider integrations. Application source and dependency versions were not changed by this review. Earlier evidence retains the revision at which it was captured; the latest merge only adds `src/mirror/` and its handoff, leaving the tested core/planner/listener unchanged.
 
+This is the historical baseline review. The follow-up hardening branch records the fixes and re-runs at [recovery-hardening](recovery-hardening.md); its focused checks supersede the old characterization counts where behavior was intentionally corrected.
+
 **Present this as a coworker whose actions can be accounted for after interruption.** The model proposes a job; stored work, human authority, and provider evidence determine what happens next. The most compelling demonstration lets the audience choose a failure point and then inspect what survived. More agents or more integrations are less valuable than making these guarantees visible and accurate.
 
 The fresh Slack merge is a substantial improvement: it now calls the planner, creates a work order, runs reversible steps through Trigger, posts approval cards, commits from authenticated callback identity, and continues to subsequent steps. The review found important correctness failures beyond the existing happy path. Address those before presenting the same guarantees for real providers.

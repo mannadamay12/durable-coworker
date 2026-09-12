@@ -9,6 +9,7 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `15:36` — Added recovery hardening after the merged Slack/mirror review: authoritative receipt returns, explicit planner validation/stub mode, unknown-outcome-safe Slack cards and continuation coalescing, mirror failure isolation and local-first snapshots; focused core/planner/mirror regressions pass — PR ready with remaining diagnostic failures documented
 - `15:20` — Reviewed uncommitted main fixes after PR #6 with three parallel reviewers; core probes improve to 9 pass / 7 fail and offline planner to 5 / 14; typecheck and original checks pass — remaining delta findings and new Slack/mirror checks recorded in `notes/review-main-delta.md`
 - `15:18` — Correctness pass: planner step ids sanitised (D30), `outcome_unknown` shown as pending not Finished and cannot overwrite a receipt (D31), stub customer now matches the scenario thread, mirror wired into the job (1s tick) and listener commit/deny (D32), Slack cards show full To/Subject/body, per-work-order receipt count, Queued notice after 10s, Paused vs Finished — typecheck clean, kill test 10/10, mirror check pass; not run live through Slack
 - `15:11` — Synced review branch with local main `6cb8c6a` after pulling; preserved D23–D29 and separated passing baseline gates from failing edge-case probes; typecheck and 13 kill-matcher checks pass — review package prepared for PR and parallel implementation
