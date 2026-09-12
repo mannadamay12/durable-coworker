@@ -1,0 +1,1313 @@
+{
+  "checkedAt": "2026-09-12T21:43:00.024Z",
+  "endpoint": "https://app.ambiguous.ai/mcp",
+  "credentialConfigured": true,
+  "operations": [
+    {
+      "method": "initialize",
+      "status": 200,
+      "durationMs": 764,
+      "contentType": "text/event-stream"
+    },
+    {
+      "method": "tools/list",
+      "status": 200,
+      "durationMs": 836,
+      "contentType": "text/event-stream"
+    }
+  ],
+  "tools": [
+    {
+      "name": "create_document",
+      "description": "Create a new document, spreadsheet, or presentation in the workspace. For docs, content should be Markdown. For sheets, content should be JSON. For slides, content should be Marp-flavored Markdown.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "doc",
+              "sheet",
+              "slide"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "description": "Document body. For type=doc, accepts Markdown (recommended) or a ProseMirror JSON string. HTML is tolerated best-effort: a tag the editor schema maps becomes its node or mark, so `<b>x</b>` stores `x` in bold. A tag it does not map is kept as literal text, attributes and closing tag verbatim, so `<display-slug>` survives a round trip. Styling and decorative wrappers are still dropped and are listed in `import_warnings` on the response. For type=sheet/slide, see the respective module's authoring format.",
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "page_style": {
+            "type": "object",
+            "properties": {
+              "margins": {
+                "type": "object",
+                "properties": {
+                  "top": {
+                    "type": "number"
+                  },
+                  "bottom": {
+                    "type": "number"
+                  },
+                  "left": {
+                    "type": "number"
+                  },
+                  "right": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "pageSize": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "width": {
+                        "type": "number"
+                      },
+                      "height": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "width",
+                      "height"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      "letter",
+                      "A4",
+                      "legal"
+                    ]
+                  }
+                ]
+              },
+              "orientation": {
+                "type": "string",
+                "enum": [
+                  "portrait",
+                  "landscape"
+                ]
+              },
+              "pageless": {
+                "description": "Pageless (continuous) layout toggle."
+              },
+              "backgroundColor": {
+                "description": "Canvas background: `default`/`white`/`dark` preset or 6-digit hex."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create document",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_document",
+      "description": "Get a single document by ID, including its full content and comments. If the user is currently viewing a document, use the document ID from the page context.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get document",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_document",
+      "description": "Edit an existing document inline. Read the document first (get_document), modify the content, then pass the full updated text — content replaces the entire body. Do NOT create a new document to edit; version history preserves prior states. Accepts Markdown or ProseMirror JSON (HTML tolerated but lossy — drops listed in `import_warnings`). Provide only the fields you want to change.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "description": "Replacement document body. For type=doc, accepts Markdown (recommended) or a ProseMirror JSON string. HTML is tolerated best-effort: a mapped tag becomes its node or mark, an unmapped tag is kept as literal text, and styling and decorative wrappers are dropped and listed in `import_warnings` on the response. Mutually exclusive with `operations`.",
+            "type": "string"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "page_style": {
+            "type": "object",
+            "properties": {
+              "margins": {
+                "type": "object",
+                "properties": {
+                  "top": {
+                    "type": "number"
+                  },
+                  "bottom": {
+                    "type": "number"
+                  },
+                  "left": {
+                    "type": "number"
+                  },
+                  "right": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "pageSize": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "width": {
+                        "type": "number"
+                      },
+                      "height": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "width",
+                      "height"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "string",
+                    "enum": [
+                      "letter",
+                      "A4",
+                      "legal"
+                    ]
+                  }
+                ]
+              },
+              "orientation": {
+                "type": "string",
+                "enum": [
+                  "portrait",
+                  "landscape"
+                ]
+              },
+              "pageless": {
+                "description": "Pageless (continuous) layout toggle."
+              },
+              "backgroundColor": {
+                "description": "Canvas background: `default`/`white`/`dark` preset or 6-digit hex."
+              }
+            },
+            "additionalProperties": false
+          },
+          "suggesting": {
+            "description": "Commenter-relaxed write: content changes must carry track-change marks (auto-wrapped for agents).",
+            "type": "boolean"
+          },
+          "operations": {
+            "description": "Block-id-targeted edits as an alternative to `content` replacement. `content` field on each op is Markdown that is converted to PM JSON and applied at the matched blockId.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "replace",
+                    "insert_after"
+                  ]
+                },
+                "blockId": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "blockId",
+                "content"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Update document",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "search_mail",
+      "description": "Full-text + operator search (Gmail-style: from:, to:, cc:, bcc:, subject:, has:attachment, is:read|unread|starred, in:inbox|sent|drafts|trash|archive, label:, after:YYYY-MM-DD, before:YYYY-MM-DD, size:N, larger:N, smaller:N, \"phrase\"). cc:/bcc: filter by recipient type. size:/larger:/smaller: filter by body byte size.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "q": {
+            "description": "Operator-syntax query (Gmail-style).",
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "detail": {
+            "type": "string",
+            "enum": [
+              "full",
+              "headers",
+              "minimal"
+            ],
+            "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels)."
+          },
+          "mailbox_id": {
+            "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it.",
+            "type": "string"
+          },
+          "fields": {
+            "type": "string"
+          },
+          "notify": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search mail",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "send_email",
+      "description": "Send an email from the current user. The body is written in Markdown and automatically converted to a beautifully formatted HTML email for delivery. Use this when the user asks to send an email, message someone, or share something via email. Supports to, cc, and bcc recipients. Recipients are specified by email address.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "verbose": {
+            "type": "string"
+          },
+          "mailbox_id": {
+            "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it.",
+            "type": "string"
+          },
+          "fields": {
+            "type": "string"
+          },
+          "notify": {
+            "type": "string"
+          },
+          "Idempotency-Key": {
+            "description": "Retry key scoped to the sender and mailbox. Repeat the same key and send parameters to receive the original send; different parameters return 409. Also accepted as body.idempotency_key. The header takes precedence.",
+            "type": "string",
+            "maxLength": 255
+          },
+          "to": {
+            "description": "Empty drafts allowed; required when sending.",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "email"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "email"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "email"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body_html": {
+            "type": "string"
+          },
+          "body_text": {
+            "type": "string"
+          },
+          "body_markdown": {
+            "description": "Authoring-format body. Compiles to body_html on send.",
+            "type": "string"
+          },
+          "in_reply_to": {
+            "type": "string"
+          },
+          "thread_id": {
+            "description": "Attach the message to an existing thread.",
+            "type": "string"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {}
+          },
+          "attachment_ids": {
+            "description": "Drive file IDs to attach.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "request_read_receipt": {
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "description": "Optional retry key. Reusing the same key with the same send request returns the original send.",
+            "type": "string",
+            "maxLength": 255
+          },
+          "contact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scheduled_at": {
+            "description": "ISO-8601. Defers send.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scheduled_for": {
+            "description": "Legacy alias for scheduled_at.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "from_email": {
+            "description": "Send-as address (must be a verified alias/domain).",
+            "type": "string"
+          },
+          "undo_send_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "include_signature": {
+            "type": "boolean"
+          },
+          "archive_thread_id": {
+            "description": "Archive this thread once the reply succeeds.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Send email",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "list_sent_mail",
+      "description": "List sent emails",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "cursor": {
+            "description": "Opaque cursor from a prior `next_cursor`.",
+            "type": "string"
+          },
+          "label_ids": {
+            "description": "Comma-separated label UUIDs (AND semantics).",
+            "type": "string"
+          },
+          "detail": {
+            "type": "string",
+            "enum": [
+              "full",
+              "headers",
+              "minimal"
+            ],
+            "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels)."
+          },
+          "mailbox_id": {
+            "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it.",
+            "type": "string"
+          },
+          "fields": {
+            "type": "string"
+          },
+          "notify": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List sent mail",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "send_draft_email",
+      "description": "Send a previously created draft email. The draft transitions from the drafts folder to sent, SES delivery is triggered, and recipient inbox copies are created. Use this when the user wants to send a draft they previously saved.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Send draft email",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_email",
+      "description": "Get a single email by ID, including full Markdown body, sender, recipients (to/cc/bcc), subject, and timestamps. Use this when the user wants to read an email, see its contents, or reply to a specific message. If the user is currently viewing an email, use the email ID from the page context. Use detail='headers' for envelope fields only (no body), or 'minimal' for id + labels only.",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string",
+            "enum": [
+              "full",
+              "headers",
+              "minimal"
+            ],
+            "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels)."
+          },
+          "fields": {
+            "type": "string"
+          },
+          "notify": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get email",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    }
+  ],
+  "notes": [
+    "Read-only initialize/tools-list probe; no tools/call, workspace provisioning or content read.",
+    "Only selected tool schemas and relevant operation names are retained; all advertised tool names are fingerprinted above. Capability advertisement does not prove authorization for each operation or validate send semantics. No send was attempted."
+  ],
+  "serverInfo": {
+    "name": "ambiguous-workspace",
+    "version": "0.1.0"
+  },
+  "protocolVersion": "2025-03-26",
+  "capabilities": {
+    "tools": {
+      "listChanged": true
+    }
+  },
+  "complete": true,
+  "toolCount": 856,
+  "status": "reachable",
+  "publicContract": {
+    "source": "https://app.ambiguous.ai/api/openapi.json",
+    "httpStatus": 200,
+    "version": "3e72fc413515b67af7472056bfbf28da5bcd8515",
+    "sha256": "966db2d7f0f6d07db140679373db3b229a14b9b3deab8d9df9b6490fc772f59c",
+    "mailSend": {
+      "operationId": "send_email",
+      "tags": [
+        "Mail"
+      ],
+      "description": "Send an email from the current user. The body is written in Markdown and automatically converted to a beautifully formatted HTML email for delivery. Use this when the user asks to send an email, message someone, or share something via email. Supports to, cc, and bcc recipients. Recipients are specified by email address.",
+      "x-tool": {
+        "expose": [
+          "all",
+          "automations"
+        ],
+        "annotations": {
+          "destructive": true,
+          "openWorld": true
+        }
+      },
+      "x-cli": {
+        "command": "mail send",
+        "aliases": [
+          "mail compose"
+        ],
+        "output": {
+          "successMessage": "Sent: {id} — {subject}"
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "required": false,
+          "name": "verbose",
+          "in": "query"
+        },
+        {
+          "schema": {
+            "type": "string",
+            "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it."
+          },
+          "required": false,
+          "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it.",
+          "name": "mailbox_id",
+          "in": "query"
+        },
+        {
+          "schema": {
+            "type": "string"
+          },
+          "required": false,
+          "name": "fields",
+          "in": "query"
+        },
+        {
+          "schema": {
+            "type": "string"
+          },
+          "required": false,
+          "name": "notify",
+          "in": "query"
+        },
+        {
+          "schema": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Retry key scoped to the sender and mailbox. Repeat the same key and send parameters to receive the original send; different parameters return 409. Also accepted as body.idempotency_key. The header takes precedence."
+          },
+          "required": false,
+          "description": "Retry key scoped to the sender and mailbox. Repeat the same key and send parameters to receive the original send; different parameters return 409. Also accepted as body.idempotency_key. The header takes precedence.",
+          "name": "Idempotency-Key",
+          "in": "header"
+        },
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "REST API major version 1 is selected with the optional API-Version: 1 request header (the default). Responses echo API-Version. Unsupported versions return 400. Additive fields and endpoints may be introduced within a major version; incompatible changes require a new major version. Deprecated operations are marked deprecated in OpenAPI; a scheduled removal must advertise Deprecation and Sunset headers before removal.",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "1"
+            ],
+            "default": "1"
+          }
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendEmailInput"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/EmailResponse"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "entities": {
+                        "$ref": "#/components/schemas/EntityReferenceMap"
+                      },
+                      "entities_truncated": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ],
+                        "description": "Present only when the reference walk hit its cap; the resolved subset is still returned."
+                      }
+                    },
+                    "additionalProperties": {}
+                  }
+                ]
+              }
+            }
+          },
+          "headers": {
+            "API-Version": {
+              "description": "Selected REST major version",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "1"
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid input",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          },
+          "headers": {
+            "API-Version": {
+              "description": "Selected REST major version",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "1"
+                ]
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          },
+          "headers": {
+            "API-Version": {
+              "description": "Selected REST major version",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "1"
+                ]
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          },
+          "headers": {
+            "API-Version": {
+              "description": "Selected REST major version",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "1"
+                ]
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          },
+          "headers": {
+            "API-Version": {
+              "description": "Selected REST major version",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "1"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "mailSchemas": {
+      "MailSendAsListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendAsAddress"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "has_more"
+        ]
+      }
+    },
+    "mailReadOperations": [
+      {
+        "path": "/api/mail/search",
+        "operationId": "search_mail",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Operator-syntax query (Gmail-style)."
+            },
+            "required": false,
+            "description": "Operator-syntax query (Gmail-style).",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "full",
+                "headers",
+                "minimal"
+              ],
+              "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels)."
+            },
+            "required": false,
+            "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels).",
+            "name": "detail",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it."
+            },
+            "required": false,
+            "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it.",
+            "name": "mailbox_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "fields",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "notify",
+            "in": "query"
+          },
+          {
+            "name": "API-Version",
+            "in": "header",
+            "required": false,
+            "description": "REST API major version 1 is selected with the optional API-Version: 1 request header (the default). Responses echo API-Version. Unsupported versions return 400. Additive fields and endpoints may be introduced within a major version; incompatible changes require a new major version. Deprecated operations are marked deprecated in OpenAPI; a scheduled removal must advertise Deprecation and Sunset headers before removal.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "default": "1"
+            }
+          }
+        ],
+        "description": "Full-text + operator search (Gmail-style: from:, to:, cc:, bcc:, subject:, has:attachment, is:read|unread|starred, in:inbox|sent|drafts|trash|archive, label:, after:YYYY-MM-DD, before:YYYY-MM-DD, size:N, larger:N, smaller:N, \"phrase\"). cc:/bcc: filter by recipient type. size:/larger:/smaller: filter by body byte size."
+      },
+      {
+        "path": "/api/mail/sent",
+        "operationId": "list_sent_mail",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Opaque cursor from a prior `next_cursor`."
+            },
+            "required": false,
+            "description": "Opaque cursor from a prior `next_cursor`.",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated label UUIDs (AND semantics)."
+            },
+            "required": false,
+            "description": "Comma-separated label UUIDs (AND semantics).",
+            "name": "label_ids",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "full",
+                "headers",
+                "minimal"
+              ],
+              "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels)."
+            },
+            "required": false,
+            "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels).",
+            "name": "detail",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it."
+            },
+            "required": false,
+            "description": "Target a shared mailbox you hold. Omit for your own mailbox; 404 if you don't hold it.",
+            "name": "mailbox_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "fields",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "notify",
+            "in": "query"
+          },
+          {
+            "name": "API-Version",
+            "in": "header",
+            "required": false,
+            "description": "REST API major version 1 is selected with the optional API-Version: 1 request header (the default). Responses echo API-Version. Unsupported versions return 400. Additive fields and endpoints may be introduced within a major version; incompatible changes require a new major version. Deprecated operations are marked deprecated in OpenAPI; a scheduled removal must advertise Deprecation and Sunset headers before removal.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "default": "1"
+            }
+          }
+        ],
+        "description": "List sent emails"
+      },
+      {
+        "path": "/api/mail/{id}",
+        "operationId": "get_email",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "full",
+                "headers",
+                "minimal"
+              ],
+              "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels)."
+            },
+            "required": false,
+            "description": "Response shape: `full` (default), `headers` (envelope only), `minimal` (id + labels).",
+            "name": "detail",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "fields",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "notify",
+            "in": "query"
+          },
+          {
+            "name": "API-Version",
+            "in": "header",
+            "required": false,
+            "description": "REST API major version 1 is selected with the optional API-Version: 1 request header (the default). Responses echo API-Version. Unsupported versions return 400. Additive fields and endpoints may be introduced within a major version; incompatible changes require a new major version. Deprecated operations are marked deprecated in OpenAPI; a scheduled removal must advertise Deprecation and Sunset headers before removal.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ],
+              "default": "1"
+            }
+          }
+        ],
+        "description": "Get a single email by ID, including full Markdown body, sender, recipients (to/cc/bcc), subject, and timestamps. Use this when the user wants to read an email, see its contents, or reply to a specific message. If the user is currently viewing an email, use the email ID from the page context. Use detail='headers' for envelope fields only (no body), or 'minimal' for id + labels only."
+      }
+    ]
+  },
+  "allToolNamesSha256": "b5faa0f2760f20f92e35062dfd60304a54609336c95723f65d484bc5bd52aaec",
+  "aliasMapping": {
+    "mail.send": "send_email",
+    "calendar.invite": "create_event",
+    "docs.create": "create_document",
+    "docs.update": "update_document",
+    "tasks.create": "create_task"
+  },
+  "relevantToolNames": [
+    "list_documents",
+    "create_document",
+    "get_document",
+    "update_document",
+    "search_mail",
+    "send_email",
+    "list_sent_mail",
+    "send_draft_email",
+    "get_email",
+    "list_tasks",
+    "create_task",
+    "get_task",
+    "update_task",
+    "list_contacts",
+    "create_contact",
+    "batch_get_contacts",
+    "merge_contacts",
+    "bulk_delete_contacts",
+    "bulk_update_contacts",
+    "bulk_export_contacts",
+    "crm_contacts_import_preview",
+    "crm_contacts_import",
+    "get_contact",
+    "update_contact",
+    "delete_contact",
+    "list_contact_activities",
+    "get_contact_score",
+    "crm_contact_files_list",
+    "crm_contact_file_attach",
+    "crm_contact_file_detach",
+    "upload_contact_photo",
+    "crm_contact_photo_get",
+    "delete_contact_photo",
+    "list_contact_groups",
+    "create_contact_group",
+    "update_contact_group",
+    "delete_contact_group",
+    "list_contact_group_members",
+    "modify_contact_group_members",
+    "list_deals",
+    "create_deal",
+    "batch_get_deals",
+    "get_deal",
+    "update_deal",
+    "delete_deal",
+    "crm_deal_activities",
+    "bulk_delete_deals",
+    "bulk_update_deals",
+    "bulk_export_deals",
+    "list_deal_line_items",
+    "add_deal_line_item",
+    "update_deal_line_item",
+    "delete_deal_line_item",
+    "crm_deal_files_list",
+    "crm_deal_file_attach",
+    "crm_deal_file_detach",
+    "list_deal_templates",
+    "get_deal_template",
+    "create_deal_template",
+    "update_deal_template",
+    "delete_deal_template",
+    "apply_deal_template",
+    "enroll_contact_in_sequence",
+    "unenroll_contact_from_sequence",
+    "list_events",
+    "create_event"
+  ]
+}

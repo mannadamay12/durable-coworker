@@ -9,6 +9,11 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `14:54` — Pulled and reviewed `54afa04`, including the new standalone document mirror; worker/listener still have no mirror calls and rendered document omits draft outputs — integration and verification plan updated for the latest merge
+- `14:49` — Three-agent review refreshed through `c564f70`; existing tests pass, but isolated core probes reproduce 9 failures and planner/data probes 16 failed checks (several share one fallback defect); Slack handler probes reproduce false completion/send messages — prioritized fixes and exact repros in `notes/demo-review.md`; review is not a correctness sign-off
+- `14:48` — Added read-only evidence viewer and six-checkpoint local kill/approval/retry replay; desktop/mobile browser checks pass — persisted progress, decisions, receipts and separate captured model calls can be inspected together
+- `14:46` — Four real OpenRouter responses across two scenarios, no fallback; 7 content/safety checks pass and 3 fail because tools use fixed customer data; six attributed BANKING77 utterances added — reproducible data-grounding review without external sends
+- `14:45` — Read-only Ambiguous discovery succeeds and advertises native `send_email` idempotency; D23 updates D9's premise — real adapter can use provider keys after acceptance tests; no provider tool executed
 - `13:50` — Smoke test PASSED live: mention started `c065c92cc2f9`, worker killed after step 3 (listener untouched), run CANCELED with `[1,2,3]` kept, worker restarted, re-mention in the same thread logged `RESUME (prior: 1,2,3)` and finished `[1,2,3,4,5]` in 2s vs 5s fresh — kill and resume proven; feature work unblocked
 - `13:47` — Fixed closing cards never posting: the listener posted after the mention handler returned, when Channels has already sealed the delivery (`no longer accepts Thread operations`). Handler now awaits the run watch (D21) — Finished and Interrupted cards reach Slack
 - `13:44` — First live take failed: `step N/5` lines never appear in `trigger dev` output (task `logger` goes to the dashboard), so the kill never fired and the run finished; closing card also failed — kill now keyed on `state/<runId>.json` instead
@@ -25,11 +30,11 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 - [x] `CPK_INTELLIGENCE_API_KEY` and `CHANNEL_CODE` obtained, Channel `angie` configured
 - [x] `TRIGGER_SECRET_KEY` + project ref `proj_rghkywrsmyalnxjbareu` in `trigger.config.ts`
 - [x] `npx trigger.dev@latest login` run — REQUIRED, the secret key does not auth the dev CLI
-- [ ] `OPENAI_API_KEY` present, one successful call made
+- [x] OpenRouter model path verified (D22 supersedes OpenAI key requirement); four real review responses, provenance and usage saved under `notes/`
 - [ ] Ambiguous key minted via `npx ambiguous auth signup` (not the shared demo workspace)
 - [x] Smoke test passes: worker killed, re-triggered, resumes at the right step, Slack bot still alive — 13:50, verified from listener log and state file; cards in Slack not yet eyeballed
 - [x] `npm run reset` works
-- [ ] Kill test dull against stubs
+- [ ] Kill test dull against stubs — original core kill test passes; slow-attempt and corrupt-artifact review failures remain
 - [ ] Authorization: non-approver click rejected
 - [ ] Injection beat: seeded thread message does not move a step
 - [ ] Ambiguous doc visible on screen during a kill

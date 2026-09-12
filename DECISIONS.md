@@ -222,3 +222,34 @@ whose endpoints all support structured outputs.
 Rules out nothing we wanted. The risk it adds is one more provider between us and a
 classification, which is why the planner keeps a deterministic fallback and the
 COMMIT_TOOLS override stays model-free.
+
+## D23. Provider-native email idempotency supersedes D9's discovery premise
+
+The 2026-09-12 review authenticated to the configured Ambiguous MCP server using only
+`initialize` and `tools/list`. Its advertised `send_email` schema includes
+`Idempotency-Key` and `idempotency_key` (maximum 255 characters), same-payload receipt
+reuse and a conflict for a different payload. The public API contract agrees. D9's
+statement that there is no documented native key is therefore superseded; its
+requirement for reconciliation evidence remains useful.
+
+Any real mail adapter should map our internal `mail.send` explicitly to this provider
+operation and use the native key contract, retaining reconciliation for unknown
+outcomes. A marker in arbitrary body text is insufficient as the sole identity proof.
+This rules out promoting the current substring-only stub reconciliation to a real
+provider guarantee. Discovery is not a send test; scope, retention, duplicate and
+conflicting-payload behavior still require controlled provider acceptance tests.
+
+Evidence and source references: `notes/review-ambiguous-capabilities.json` and
+`notes/review-datasets-integrations.md`. No provider tool was executed in this review.
+
+## D24. Review observation has no execution authority
+
+The review's companion viewer reads an explicit state directory and replays captured
+core checkpoints. It exposes no approval, reset, model invocation or send endpoint.
+This makes inspection and browser reconnection safe to repeat while the main build
+continues. Its local stub replay and separate live-model probes are labeled distinctly.
+
+An eventual AG-UI observer should preserve this separation: stream projections of
+durable facts, and send authenticated human commands through the existing backend
+authorization boundary. UI state patches or replayed events do not grant commit
+authority. The review prototype is not a deployed AG-UI implementation.

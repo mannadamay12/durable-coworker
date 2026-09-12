@@ -1,0 +1,93 @@
+{
+  "checkedAt": "2026-09-12T21:55:48.310Z",
+  "revision": "54afa04b117c8b21e94d3603196077ebe15e4270",
+  "mode": "offline-mocked-transport",
+  "checks": [
+    {
+      "name": "mirror renders durable draft evidence",
+      "status": "fail",
+      "evidence": {
+        "draftPresent": false
+      }
+    },
+    {
+      "name": "mirror renders exact proposed recipient and payload",
+      "status": "fail",
+      "evidence": {
+        "proposedArgsPresent": false
+      }
+    },
+    {
+      "name": "same-process mirrors coalesce initial creation",
+      "status": "pass",
+      "evidence": [
+        {
+          "endpoint": "https://app.ambiguous.ai/mcp",
+          "name": "create_document",
+          "args": {
+            "type": "doc",
+            "title": "Work order WO-REVIEW-MIRROR: review",
+            "content": "# WO-REVIEW-MIRROR: review\n\n**WAITING ON HUMAN: 2-send (mail.send)**\n\n## Constraints\n\n- Do not offer a refund\n\n## Steps\n\n| # | Step | Kind | Status |\n|---|---|---|---|\n| 1 | Draft response (draft) | reversible | DONE |\n| 2 | Send response (mail.send) | COMMIT [allowlist] | WAITING ON HUMAN |\n\n## Ledger\n\n| Step / tool | Status | Approved by | External id |\n|---|---|---|---|\n| 2-send / mail.send | PROPOSED | - | - |\n\n_Mirror of SQLite. SQLite is truth; this document can lag._\n"
+          }
+        }
+      ]
+    },
+    {
+      "name": "configured MCP endpoint is honored",
+      "status": "fail",
+      "evidence": {
+        "configured": "http://127.0.0.1:1/intended-test-endpoint",
+        "actual": "https://app.ambiguous.ai/mcp"
+      }
+    },
+    {
+      "name": "transient tool errors do not imply deleted document",
+      "status": "fail",
+      "evidence": [
+        "update_document",
+        "get_document",
+        "create_document"
+      ]
+    },
+    {
+      "name": "RPC response ID must match request",
+      "status": "fail",
+      "evidence": {
+        "rejectedWrongId": false
+      }
+    },
+    {
+      "name": "SSE notification before response is supported",
+      "status": "fail",
+      "evidence": {
+        "parsedResponse": false
+      }
+    },
+    {
+      "name": "file mirror retains both work orders",
+      "status": "fail",
+      "evidence": {
+        "containsA": false,
+        "containsB": true,
+        "note": "Current fixed camera file intentionally keeps only the last work order; this limits multi-customer demo use."
+      }
+    },
+    {
+      "name": "separate processes create one document for one work order",
+      "status": "fail",
+      "evidence": {
+        "providerCreateCalls": 2,
+        "mapping": "mock-doc-2"
+      }
+    }
+  ],
+  "notes": [
+    "No real provider calls, credentials, external documents or main state used.",
+    "Desired-behavior checks report known findings; --strict fails if findings remain."
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 1,
+    "failed": 8
+  }
+}

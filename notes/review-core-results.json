@@ -1,0 +1,183 @@
+{
+  "stateDir": "/var/folders/tt/mwf1k94d1450skhpqsbgbkg80000gn/T/coworker-review-core-sdppHH",
+  "passed": 7,
+  "failed": 9,
+  "checks": [
+    {
+      "name": "irreversible tool classifications are overridden before execution",
+      "status": "PASS",
+      "details": {
+        "toolsChecked": 4,
+        "sends": 0
+      },
+      "durationMs": 75
+    },
+    {
+      "name": "unauthorized approval cannot send",
+      "status": "PASS",
+      "details": {
+        "sends": 0,
+        "status": "proposed"
+      },
+      "durationMs": 22
+    },
+    {
+      "name": "twenty simultaneous clicks send once and repeat returns receipt",
+      "status": "PASS",
+      "details": {
+        "clicks": 20,
+        "sends": 1,
+        "repeatedReceiptReused": true
+      },
+      "durationMs": 82
+    },
+    {
+      "name": "eight separate processes claim one provider action",
+      "status": "PASS",
+      "details": {
+        "processes": 8,
+        "sends": 1,
+        "ledgerStatus": "committed"
+      },
+      "durationMs": 3753
+    },
+    {
+      "name": "landed but unrecorded artifact reconciles without another send",
+      "status": "PASS",
+      "details": {
+        "reconciled": true,
+        "sends": 1
+      },
+      "durationMs": 43
+    },
+    {
+      "name": "denial blocks a proposed side effect",
+      "status": "PASS",
+      "details": {
+        "sends": 0,
+        "rejected": true
+      },
+      "durationMs": 59
+    },
+    {
+      "name": "canonical args preserve idempotency hash",
+      "status": "PASS",
+      "details": {
+        "canonical": true
+      },
+      "durationMs": 0
+    },
+    {
+      "name": "an active provider request must not be duplicated after lease expiry",
+      "status": "FAIL",
+      "details": {
+        "providerCalls": 2,
+        "outboxRows": 2
+      },
+      "error": "a live request was sent again after only its timestamp expired\n\n2 !== 1\n",
+      "durationMs": 96
+    },
+    {
+      "name": "a late failure must not demote a committed ledger entry",
+      "status": "FAIL",
+      "details": {
+        "ledgerStatus": "outcome_unknown",
+        "stepStatus": "committed",
+        "hasReceipt": true
+      },
+      "error": "late failure overwrote committed status\n+ actual - expected\n\n+ 'outcome_unknown'\n- 'committed'\n",
+      "durationMs": 61
+    },
+    {
+      "name": "duplicate model step ids must not silently skip a second action",
+      "status": "FAIL",
+      "details": {
+        "statuses": [
+          "committed",
+          "committed"
+        ],
+        "ledgerRows": 1,
+        "toolsActuallyCalled": [
+          "mail.send"
+        ]
+      },
+      "error": "two actions report committed with only one ledger row\n\n1 !== 2\n",
+      "durationMs": 86
+    },
+    {
+      "name": "step ids containing separators must bind to their own ledger row",
+      "status": "FAIL",
+      "details": {
+        "statuses": [
+          "committed",
+          "committed"
+        ],
+        "ledgerRows": 1,
+        "toolsActuallyCalled": [
+          "mail.send"
+        ]
+      },
+      "error": "prefix lookup reused another step's receipt",
+      "durationMs": 47
+    },
+    {
+      "name": "a quoted marker in a different action must not count as a receipt",
+      "status": "FAIL",
+      "details": {
+        "reused": true,
+        "receipt": "crm_update_064b5929",
+        "toolsActuallyCalled": [
+          "crm.update"
+        ]
+      },
+      "error": "quoted body text falsely reconciled an unrelated CRM receipt\n\ntrue !== false\n",
+      "durationMs": 27
+    },
+    {
+      "name": "a torn JSONL tail must not hide the next completed artifact",
+      "status": "FAIL",
+      "details": {
+        "visibleBefore": 0,
+        "firstReceipt": "mail_send_8d6e5e9e",
+        "secondReceipt": "mail_send_d87945e6",
+        "reused": false,
+        "firstReceiptStillInRawFile": true
+      },
+      "error": "valid append was concatenated with torn tail, then resent\n\nfalse !== true\n",
+      "durationMs": 28
+    },
+    {
+      "name": "an unknown tool cannot be reported as completed work",
+      "status": "FAIL",
+      "details": {
+        "status": "done",
+        "output": "No stub for tool \"unsupported.provider.action\"; step recorded."
+      },
+      "error": "unsupported tool marked done despite no execution",
+      "durationMs": 35
+    },
+    {
+      "name": "concurrent workorder runs execute each reversible step once",
+      "status": "FAIL",
+      "details": {
+        "runnerCount": 2,
+        "toolCalls": 2
+      },
+      "error": "both runners treated running as abandoned without a run ownership check\n\n2 !== 1\n",
+      "durationMs": 51
+    },
+    {
+      "name": "unknown outcome retains an operator recovery action",
+      "status": "FAIL",
+      "details": {
+        "ledgerStatus": "outcome_unknown",
+        "stepStatus": "waiting_human",
+        "pendingApproval": false
+      },
+      "error": "outcome_unknown disappears from pendingApproval without a recovery API",
+      "durationMs": 31
+    }
+  ],
+  "generatedAt": "2026-09-12T21:43:59.612Z",
+  "revision": "c564f708c27c80edc2115f9141910b1bed05258e"
+}

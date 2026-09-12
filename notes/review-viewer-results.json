@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-09-12T21:50:18.690Z",
+  "replayCheckpoints": 6,
+  "modelProbeRecords": 4,
+  "liveView": true,
+  "mobileWidth": 375,
+  "mobileOverflow": false,
+  "browserErrors": [],
+  "getRoutes": {
+    "/": 200,
+    "/api/snapshot": 200,
+    "/api/replay": 200,
+    "/api/model-probes": 200
+  },
+  "postRejected": true
+}
