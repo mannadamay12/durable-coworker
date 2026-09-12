@@ -362,3 +362,57 @@ Rules out: another customer's fixture being presented as a model result, a cosme
 document outage terminating business work, or a remote projection timeout delaying the
 human decision. The remote projection still needs a durable delivery record before it
 can claim cross-process reliability.
+
+## D36. A dataset thread id in `WorkOrder.scenario` is the grounding key
+
+`contract.ts` stays frozen. When `scenario` names a thread in `datasets/threads.json`,
+research, draft, tasks, constraints and the frozen proposal all come from that thread and
+its customer (`src/core/context.ts`). Any other scenario (`customer-success`) keeps the
+Northwind stub unchanged, so the kill test and listener behave as before.
+
+Rules out: a new customer field on the work order, and the executor inventing content
+for a dataset thread.
+
+## D37. No cross-customer fallback; ungroundable commits fail before proposal
+
+If a dataset thread has no source draft, its recipient is not a contact of its customer,
+or its commit tool is not in `COMMIT_TOOLS`, the commit step is marked `failed` and no
+ledger row is written. `THREAD-NORTHWIND-STATUS` (`status.publish`) fails this way on
+purpose. Threads with no customer or no approver (`THREAD-EMPTY`) create no work order.
+`THREAD-ACME-REFUND` has no source draft in the pack, so it uses a decline template
+built only from the thread and customer fields.
+
+Rules out: substituting another customer's draft or recipient to reach an approval card.
+
+## D38. Recovery beats are built by driving the engine, not by loading fixture rows
+
+`buildRecovery(beat)` uses only the thread id, work order id and approvers from
+`work_order_fixtures.json`, then runs the real `runReversible` / `approve` / `commit` /
+`deny` path (the crash window replays the tool call without the ledger write, as the kill
+test does). The fixtures' hand-written ledger keys and statuses are ignored.
+
+Rules out: ledger keys that do not match `idempotencyKey()`, such as the imported
+`WO-1842-KILL` row keyed `WO-1842:...:sha256:acme-dana-v1`.
+
+## D39. Second assertion script: `src/core/scenarios.test.ts`
+
+This relaxes the single assertion script rule for one script. It is the acceptance gate
+for dataset grounding and the README "assertions the tests should lock". It uses the kill
+test's pattern: isolated `STATE_DIR`, plain `assert`, no framework.
+
+Rules out: adding further test files without a similar gate-level reason.
+
+## D40. Slack dataset sources are explicit and synthetic approvers map through deployment config
+
+The listener cannot infer a dataset from mention length because Channels provides only
+the mention text. A new conversation must say `take this THREAD-*` or explicitly opt
+into `use fixture customer-success`; an empty, unknown or ambiguous selector creates
+no work order. `DATASET_SLACK_USERS` maps each seeded approver to a real workspace
+member before `createFromThread` is called. A real member may represent several
+fictional personas in different scenarios, but two approvers on one work order must
+remain distinct. The requester is never added automatically, and `U_SAM` / the agent
+identity cannot be mapped.
+
+Rules out: silently planning from Northwind for a long arbitrary mention, inventing
+Slack accounts, or letting a source-selection race replace an already grounded
+conversation.

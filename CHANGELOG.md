@@ -9,6 +9,9 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `16:01` — Dataset integration completed after pulling main: explicit Slack source selectors, real-ID approver mapping, static JSON bundling, engine-built recovery beats, CLI flows, and refusal/injection checks are covered by the combined offline gate — branch ready for review and merge; no external Slack accounts or messages were created
+- `15:44` — Dataset grounding (D36–D39; originally D35–D38), after the 15:30 submission: dataset threads now ground research, draft, tasks, constraints and the frozen proposal; `cli.ts load <beat>` and `create --thread` build the six recovery beats through the engine. `src/core/scenarios.test.ts` passes: 4 customer threads grounded; Northwind `status.publish` fails before proposal; `THREAD-EMPTY` creates nothing; kill/resume keeps 2 tasks; retry and reconcile keep outbox at 1; U_SAM rejected; deny blocks. Typecheck clean, kill test 10/10 — Slack listener still plans from `customer-success`; not run live.
+
 - `15:36` — Added recovery hardening after the merged Slack/mirror review: authoritative receipt returns, explicit planner validation/stub mode, unknown-outcome-safe Slack cards and continuation coalescing, mirror failure isolation and local-first snapshots; focused core/planner/mirror regressions pass — PR ready with remaining diagnostic failures documented
 - `15:20` — Reviewed uncommitted main fixes after PR #6 with three parallel reviewers; core probes improve to 9 pass / 7 fail and offline planner to 5 / 14; typecheck and original checks pass — remaining delta findings and new Slack/mirror checks recorded in `notes/review-main-delta.md`
 - `15:18` — Correctness pass: planner step ids sanitised (D30), `outcome_unknown` shown as pending not Finished and cannot overwrite a receipt (D31), stub customer now matches the scenario thread, mirror wired into the job (1s tick) and listener commit/deny (D32), Slack cards show full To/Subject/body, per-work-order receipt count, Queued notice after 10s, Paused vs Finished — typecheck clean, kill test 10/10, mirror check pass; not run live through Slack
@@ -62,4 +65,5 @@ honest rather than reconstructed from memory.
 - `13:31` — Not a cut, a correction: the runId cannot be the Slack `thread_ts` (Channels
   does not expose it) and cannot be a Trigger.dev run id (no such option). Hashed
   `conversationKey` in the payload instead. See D17 and D18. Cost: nothing functional.
+- `15:44` — Cut from dataset grounding: Slack listener choosing a dataset thread, mapping synthetic approver ids (`U_MAYA`) to real Slack ids, checking body text against constraints (only the recipient is checked), and planner fallback changes. Cost: dataset grounding is reachable only from `cli.ts` and the tests.
 - `15:18` — AG-UI companion viewer cut (D33). Queued/Running is logged, not shown as a live-edited card; only a Queued notice after 10s is posted. The stuck-pending worker was not reproduced, only surfaced.

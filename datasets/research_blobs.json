@@ -1,0 +1,78 @@
+{
+  "note": "Stub Exa. Do not call the network until the kill test is boring. Each blob is what the reversible research step writes into step.output and the Ambiguous doc.",
+  "blobs": [
+    {
+      "id": "RESEARCH-ACME-OUTAGE",
+      "threadId": "THREAD-ACME-OUTAGE",
+      "query": "public language for a 18 minute eu-west-1 ingest outage customer update",
+      "citations": [
+        {
+          "title": "How we write incident customer emails (internal style, synthetic)",
+          "url": "https://wiki.northstar.example/incident-customer-email",
+          "highlight": "Acknowledge duration, point at the status page, do not attach RCA, do not introduce new timelines."
+        },
+        {
+          "title": "Status page copy already published 09:50 PT",
+          "url": "https://status.northstar.example/incidents/inc-8841",
+          "highlight": "Investigating elevated error rates on eu-west-1 ingest. Next update in 30 minutes."
+        }
+      ],
+      "draftEmail": {
+        "to": "dana@acme-robotics.example",
+        "subject": "Northstar update — eu-west-1 ingest interruption (18 minutes)",
+        "body": "Dana — eu-west-1 ingest was interrupted for 18 minutes starting 09:41 PT. The public status page is here: https://status.northstar.example/incidents/inc-8841\n\nWe are not attaching a root-cause analysis in this note. We will not commit to a credit in this email.\n\nMaya Chen, Customer Success"
+      }
+    },
+    {
+      "id": "RESEARCH-HELIX-SECURITY",
+      "threadId": "THREAD-HELIX-SECURITY",
+      "query": "standard answers for SOC2, encryption at rest, subprocessors, no PHI",
+      "citations": [
+        {
+          "title": "Northstar security FAQ (synthetic, public)",
+          "url": "https://trust.northstar.example/faq",
+          "highlight": "SOC 2 Type II, encryption at rest AES-256, TLS 1.2+. We are not a HIPAA BA for this product surface."
+        }
+      ],
+      "draftEmail": {
+        "to": "irina@helix-health.example",
+        "subject": "Helix Health — security questionnaire draft (legal review pending)",
+        "body": "Irina — attached are draft answers from our public trust center. This email does not contain PHI and does not include internal diagrams. Legal has not yet approved sending; this is a draft in our work order only."
+      }
+    },
+    {
+      "id": "RESEARCH-LANTERN-PRICING",
+      "threadId": "THREAD-LANTERN-PRICING",
+      "query": "Lantern Analytics 20 percent annual quote follow-up",
+      "citations": [
+        {
+          "title": "Quote Q-3391 (synthetic)",
+          "url": "https://quotes.northstar.example/Q-3391",
+          "highlight": "Annual, 20% off list. Floor 18%. No start date."
+        }
+      ],
+      "draftEmail": {
+        "to": "chris@lantern.example",
+        "subject": "Follow-up: Northstar annual quote Q-3391",
+        "body": "Chris — restating the quote already sent: 20% off list on an annual term. Implementation start date is TBD. I am not copying anyone else on your side."
+      }
+    },
+    {
+      "id": "RESEARCH-NORTHWIND-STATUS",
+      "threadId": "THREAD-NORTHWIND-STATUS",
+      "query": "status page investigating copy 30 minute cadence",
+      "citations": [
+        {
+          "title": "Status page template: investigating",
+          "url": "https://status.northstar.example/templates/investigating",
+          "highlight": "We are investigating. Next update in 30 minutes. Do not name customers."
+        }
+      ],
+      "draftStatus": {
+        "visibility": "public",
+        "state": "investigating",
+        "body": "We are investigating elevated error rates. Next update in 30 minutes."
+      }
+    }
+  ]
+}

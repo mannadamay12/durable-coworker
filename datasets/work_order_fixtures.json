@@ -1,0 +1,132 @@
+{
+  "note": "Pre-baked SQLite rows so you can jump to any demo beat without running the full loop. Primary live demo still starts from THREAD-ACME-OUTAGE with an empty ledger.",
+  "workOrders": [
+    {
+      "id": "WO-1842",
+      "threadId": "THREAD-ACME-OUTAGE",
+      "fixtureFor": "fresh_start",
+      "approvers": ["U_MAYA", "U_LEO"],
+      "constraints": ["do not promise a credit", "do not share RCA before legal review"],
+      "steps": [
+        { "id": "1-read-thread", "name": "Read thread and extract constraints", "kind": "reversible", "status": "pending" },
+        { "id": "2-research", "name": "Research public language", "kind": "reversible", "status": "pending" },
+        { "id": "3-draft-email", "name": "Draft customer email into work order", "kind": "reversible", "status": "pending" },
+        { "id": "4-create-tasks", "name": "Create follow-up tasks", "kind": "reversible", "status": "pending" },
+        { "id": "5-send-customer-update", "name": "Send customer email", "kind": "commit", "status": "pending" }
+      ],
+      "commits": []
+    },
+    {
+      "id": "WO-1842-KILL",
+      "threadId": "THREAD-ACME-OUTAGE",
+      "fixtureFor": "kill_before_approval",
+      "note": "Load this, kill the process, re-trigger by work order id. Must resume at waiting_human. Tasks already created — do not duplicate.",
+      "approvers": ["U_MAYA", "U_LEO"],
+      "constraints": ["do not promise a credit", "do not share RCA before legal review"],
+      "steps": [
+        { "id": "1-read-thread", "kind": "reversible", "status": "done" },
+        { "id": "2-research", "kind": "reversible", "status": "done", "output": "RESEARCH-ACME-OUTAGE" },
+        { "id": "3-draft-email", "kind": "reversible", "status": "done", "output": "draft stored on work order" },
+        { "id": "4-create-tasks", "kind": "reversible", "status": "done", "output": "TASK-WO-1842-1, TASK-WO-1842-2" },
+        { "id": "5-send-customer-update", "kind": "commit", "status": "waiting_human" }
+      ],
+      "commits": [
+        {
+          "idempotencyKey": "WO-1842:5-send-customer-update:mail.send:sha256:acme-dana-v1",
+          "tool": "mail.send",
+          "args": {
+            "to": "dana@acme-robotics.example",
+            "subject": "Northstar update — eu-west-1 ingest interruption (18 minutes)"
+          },
+          "status": "proposed"
+        }
+      ],
+      "tasksAlreadyCreated": [
+        { "id": "TASK-WO-1842-1", "title": "Legal review of Acme RCA (internal only)" },
+        { "id": "TASK-WO-1842-2", "title": "Follow up with Dana after status page goes green" }
+      ]
+    },
+    {
+      "id": "WO-1842-SENT",
+      "threadId": "THREAD-ACME-OUTAGE",
+      "fixtureFor": "retry_send_already_committed",
+      "approvers": ["U_MAYA", "U_LEO"],
+      "constraints": ["do not promise a credit", "do not share RCA before legal review"],
+      "steps": [
+        { "id": "5-send-customer-update", "kind": "commit", "status": "committed" }
+      ],
+      "commits": [
+        {
+          "idempotencyKey": "WO-1842:5-send-customer-update:mail.send:sha256:acme-dana-v1",
+          "tool": "mail.send",
+          "status": "committed",
+          "approvedBy": "U_MAYA",
+          "externalId": "outbox-0001",
+          "committedAt": "2026-09-12T20:06:00Z"
+        }
+      ]
+    },
+    {
+      "id": "WO-1842-UNKNOWN",
+      "threadId": "THREAD-ACME-OUTAGE",
+      "fixtureFor": "crash_between_provider_and_ledger",
+      "note": "Honest at-least-once window. Outbox has the mail, ledger does not. Recovery must reconcile, not send again.",
+      "approvers": ["U_MAYA", "U_LEO"],
+      "steps": [
+        { "id": "5-send-customer-update", "kind": "commit", "status": "waiting_human" }
+      ],
+      "commits": [
+        {
+          "idempotencyKey": "WO-1842:5-send-customer-update:mail.send:sha256:acme-dana-v1",
+          "tool": "mail.send",
+          "status": "approved",
+          "approvedBy": "U_MAYA"
+        }
+      ],
+      "outboxAlreadyHas": [
+        {
+          "id": "outbox-0001",
+          "idempotencyKey": "WO-1842:5-send-customer-update:mail.send:sha256:acme-dana-v1",
+          "to": "dana@acme-robotics.example"
+        }
+      ]
+    },
+    {
+      "id": "WO-2107",
+      "threadId": "THREAD-LANTERN-PRICING",
+      "fixtureFor": "injection_still_proposed",
+      "approvers": ["U_PRIYA"],
+      "constraints": ["do not discount below 18%", "do not cc the founder", "do not invent a start date"],
+      "steps": [
+        { "id": "3-draft-email", "kind": "reversible", "status": "done" },
+        { "id": "5-send-customer-update", "kind": "commit", "status": "waiting_human" }
+      ],
+      "commits": [
+        {
+          "idempotencyKey": "WO-2107:5-send-customer-update:mail.send:sha256:lantern-chris-v1",
+          "tool": "mail.send",
+          "args": { "to": "chris@lantern.example", "cc": [] },
+          "status": "proposed"
+        }
+      ]
+    },
+    {
+      "id": "WO-0901",
+      "threadId": "THREAD-ACME-REFUND",
+      "fixtureFor": "deny_path",
+      "approvers": ["U_MAYA", "U_LEO"],
+      "constraints": ["do not promise a credit"],
+      "denyBehavior": "stop_job",
+      "steps": [
+        { "id": "5-send-customer-update", "kind": "commit", "status": "waiting_human" }
+      ],
+      "commits": [
+        {
+          "idempotencyKey": "WO-0901:5-send-customer-update:mail.send:sha256:acme-owen-decline-v1",
+          "tool": "mail.send",
+          "status": "proposed"
+        }
+      ]
+    }
+  ]
+}

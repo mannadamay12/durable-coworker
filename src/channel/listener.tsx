@@ -31,8 +31,10 @@ import {
   pendingApproval,
 } from "../core/index.js";
 import { STATE_DIR, runIdFromThreadKey } from "../core/state.js";
+import { createFromThread } from "../core/recovery.js";
 import { mirrorSoon } from "../mirror/index.js";
 import type { workorderTask } from "../trigger/workorder.js";
+import { datasetSlackApprovers, mentionSelection, SELECTION_HELP, SourceSelectionError } from "./datasets.js";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -45,8 +47,8 @@ const log = (msg: string) => console.log(`[channel ${new Date().toISOString()}] 
 const CHANNEL_CODE = required("CHANNEL_CODE");
 required("TRIGGER_SECRET_KEY"); // fail at boot, not on the first mention
 
-// Channels hands us only the mention's own text, not the thread history, so the demo
-// thread comes from the fixture unless the mention itself carries a real brief.
+// Channels hands us only the mention text. This fixture is selected explicitly;
+// dataset seeds have a separate grounded path and never enter the model planner.
 const FIXTURE = JSON.parse(
   readFileSync(new URL("../../scenarios/customer-success.json", import.meta.url), "utf8"),
 ) as { id: string; threadText: string };
@@ -355,20 +357,43 @@ channel.onMention(async ({ thread, message }) => {
   const threadRef = runIdFromThreadKey(thread.conversationKey);
   const woId = `WO-${threadRef}`;
   try {
+    const selection = mentionSelection(message.text);
     let wo = findWorkOrder(woId);
     if (!wo) {
-      const threadText = message.text.trim().length > 80 ? message.text : FIXTURE.threadText;
-      const planned = await plan(threadText);
-      const approvers = [...new Set([message.actor.id, ...ENV_APPROVERS])];
-      wo = createWorkOrder({
-        id: woId,
-        scenario: FIXTURE.id,
-        threadRef,
-        constraints: planned.constraints,
-        approvers,
-        steps: planned.steps,
-      });
-      log(`mention -> created ${woId} approvers=${approvers.join(",")}`);
+      if (!selection) {
+        await notice(thread, ACCENT.wait, "Choose a source thread", SELECTION_HELP, "No work order or worker run was created.");
+        return;
+      }
+      if (selection.kind === "dataset") {
+        const approvers = datasetSlackApprovers(selection.id);
+        wo = createFromThread(selection.id, { id: woId, threadRef, approvers });
+        if (!wo) {
+          await notice(thread, ACCENT.stop, "Cannot start this dataset thread", `${selection.id} needs a customer, a constraint, and an allowlisted approver.`, "No work order or worker run was created.");
+          return;
+        }
+      } else {
+        if (selection.id !== FIXTURE.id) throw new SourceSelectionError(`Unknown fixture ${selection.id}. ${SELECTION_HELP}`);
+        if (!ENV_APPROVERS.length || ENV_APPROVERS.some(id => !/^[UW][A-Z0-9]{8,}$/.test(id))) {
+          throw new SourceSelectionError("Set APPROVERS to a comma-separated list of real Slack user IDs before starting the fixture. The requester is not automatically an approver.");
+        }
+        const planned = await plan(FIXTURE.threadText);
+        const approvers = [...new Set(ENV_APPROVERS)];
+        wo = createWorkOrder({
+          id: woId,
+          scenario: FIXTURE.id,
+          threadRef,
+          constraints: planned.constraints,
+          approvers,
+          steps: planned.steps,
+        });
+      }
+      log(`mention -> selected ${woId} source=${wo.scenario} approvers=${wo.approvers.join(",")}`);
+    }
+    // The fixture planner awaits a model; another mention may select a dataset
+    // before its create returns the already stored work order. Check that result too.
+    if (selection && selection.id !== wo.scenario) {
+      await notice(thread, ACCENT.stop, "Source already selected", `This conversation belongs to ${wo.scenario}. Start a new Slack thread to use ${selection.id}.`, "Recorded work and approval identities are preserved.");
+      return;
     }
 
     const pending = pendingApproval(wo);
@@ -400,6 +425,10 @@ channel.onMention(async ({ thread, message }) => {
     );
     await runJob(thread, woId);
   } catch (err) {
+    if (err instanceof SourceSelectionError) {
+      await notice(thread, ACCENT.stop, "Cannot start this source", err.message, "No new work order or worker run was created.");
+      return;
+    }
     await errorCard(thread, err, woId);
   }
 });

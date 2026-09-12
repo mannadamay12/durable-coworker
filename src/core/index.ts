@@ -168,7 +168,14 @@ function proposeCommit(wo: WorkOrder, step: Step): boolean {
     return false;
   }
   if (!existing) {
-    const args = commitArgs(wo, step);
+    let args: Record<string, unknown>;
+    try {
+      args = commitArgs(wo, step);
+    } catch (err) {
+      updateStep(wo.id, step.id, { status: "failed", output: (err as Error).message });
+      log(`${wo.id} step ${step.id} FAILED before proposal: ${(err as Error).message}`);
+      return false;
+    }
     const key = idempotencyKey(wo.id, step.id, tool, args);
     withDb((db) =>
       db

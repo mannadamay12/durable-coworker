@@ -1,0 +1,5 @@
+{
+  "note": "Stub mail.send. Append-only file. The kill test asserts length. Never delete rows. Reconciliation looks up by idempotencyKey.",
+  "provider": "stub-outbox",
+  "messages": []
+}
