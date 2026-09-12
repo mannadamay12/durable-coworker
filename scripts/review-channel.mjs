@@ -1,18 +1,31 @@
-// Offline review probe for the actual listener handlers. No listener, network, or database is started.
+// Offline review probe for the actual listener handlers. No listener or network is started.
+// Dataset cases drive the real core against an automatically removed temporary database.
 // Run: node --import tsx scripts/review-channel.mjs
 // Recovery regressions assert desired behavior; remaining limitations are labeled separately.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import vm from "node:vm";
 import ts from "typescript";
 import * as ui from "@copilotkit/channels/ui";
 import * as jsxRuntime from "@copilotkit/channels/jsx-runtime";
 import { renderSlackMessage } from "@copilotkit/channels/slack/render";
 import { EventSchemas } from "@ag-ui/core";
-import { NotApprovedError, NotAuthorizedError, pendingApproval } from "../src/core/index.ts";
 import { ActionRegistry } from "../node_modules/@copilotkit/channels-core/dist/action-registry.js";
 import { MemoryStore } from "../node_modules/@copilotkit/channels-core/dist/state/memory-store.js";
 import { kvActionStore } from "../node_modules/@copilotkit/channels-core/dist/state/kv-action-store.js";
+
+const stateDir = mkdtempSync(join(tmpdir(), "durable-channel-review-"));
+process.on("exit", () => rmSync(stateDir, { recursive: true, force: true }));
+process.env.STATE_DIR = stateDir;
+process.env.STUB_DELAY_MS = "0";
+const core = await import("../src/core/index.ts");
+const { NotApprovedError, NotAuthorizedError, pendingApproval } = core;
+const { createFromThread } = await import("../src/core/recovery.ts");
+const { datasetSlackApprovers, mentionSelection, SELECTION_HELP, SourceSelectionError } = await import("../src/channel/datasets.ts");
+const { runIdFromThreadKey } = await import("../src/core/state.ts");
+const { readOutbox } = await import("../src/tools/outbox.ts");
 
 const sourceUrl = new URL("../src/channel/listener.tsx", import.meta.url);
 const raw = readFileSync(sourceUrl, "utf8");
@@ -34,18 +47,24 @@ function baseWorkOrder() {
 
 function harness(options = {}) {
   const state = { wo: options.wo ?? baseWorkOrder(), posted: [], triggers: [], commits: [], mirrors: [], planned: [], created: [], mention: undefined, channelOptions: undefined };
-  const thread = { conversationKey: "review-thread", post: async (tree) => { state.posted.push(renderSlackMessage(ui.renderToIR(tree))); return { id: `mock-message-${state.posted.length}` }; } };
+  const threadFor = conversationKey => ({ conversationKey, post: async (tree) => { state.posted.push(renderSlackMessage(ui.renderToIR(tree))); return { id: `mock-message-${state.posted.length}` }; } });
+  const thread = threadFor(options.conversationKey ?? "review-thread");
+  const env = { CHANNEL_CODE: "offline-review", TRIGGER_SECRET_KEY: "inert-mocked-key", APPROVERS: "UOWNER001", ...options.env };
   const context = vm.createContext({
     ...ui, URL, readFileSync, setTimeout, clearTimeout, exports: {}, console: { log() {}, warn() {} },
-    process: { env: { CHANNEL_CODE: "offline-review", TRIGGER_SECRET_KEY: "inert-mocked-key", APPROVERS: "U_OWNER" } },
+    process: { env },
     require(name) { assert.equal(name, "@copilotkit/channels/jsx-runtime"); return jsxRuntime; },
     createChannel(config) { state.channelOptions = config; return { onMention(handler) { state.mention = handler; } }; },
-    NotApprovedError, NotAuthorizedError, pendingApproval,
-    getWorkOrder() { return state.wo; }, findWorkOrder() { return options.newWorkOrder ? undefined : state.wo; },
-    createWorkOrder(args) { state.created.push(args); state.wo = { ...args, commits: [] }; return state.wo; },
-    plan: async (text) => { state.planned.push(text); if (options.planError) throw options.planError; return { steps: [], constraints: [] }; },
+    NotApprovedError, NotAuthorizedError, pendingApproval, mentionSelection, SELECTION_HELP, SourceSelectionError,
+    datasetSlackApprovers(id) { return datasetSlackApprovers(id, env.DATASET_SLACK_USERS ?? ""); },
+    createFromThread(id, opts) { assert.ok(options.realEngine); const wo = createFromThread(id, opts); if (wo) { state.created.push(wo); state.wo = wo; } return wo; },
+    getWorkOrder(id) { return options.realEngine ? core.getWorkOrder(id) : state.wo; },
+    findWorkOrder(id) { return options.realEngine ? core.findWorkOrder(id) : options.newWorkOrder ? undefined : state.wo; },
+    createWorkOrder(args) { state.created.push(args); state.wo = options.realEngine ? core.createWorkOrder(args) : { ...args, commits: [] }; return state.wo; },
+    plan: async (text) => { state.planned.push(text); if (options.planGate) await options.planGate; if (options.planError) throw options.planError; return { steps: [], constraints: [] }; },
     commit: async (...args) => {
       state.commits.push(args);
+      if (options.realEngine) return core.commit(...args);
       if (options.commitError) throw options.commitError;
       const result = options.commitResult ?? { reused: false, status: "committed", externalId: "receipt-review", idempotencyKey: "review-key" };
       if (result.status === "committed") {
@@ -54,14 +73,14 @@ function harness(options = {}) {
       }
       return result;
     },
-    deny() { if (options.denyError) throw options.denyError; return state.wo; },
+    deny(...args) { if (options.realEngine) return core.deny(...args); if (options.denyError) throw options.denyError; return state.wo; },
     mirrorSoon(wo) { state.mirrors.push(wo.id); },
-    STATE_DIR: "/offline-review-never-written", runIdFromThreadKey() { return "review-thread"; },
-    tasks: { trigger: async (...args) => { state.triggers.push(args); if (options.triggerError) throw options.triggerError; return { id: "run-review" }; } },
+    STATE_DIR: stateDir, runIdFromThreadKey(key) { return options.realEngine ? runIdFromThreadKey(key) : "review-thread"; },
+    tasks: { trigger: async (...args) => { state.triggers.push(args); if (options.triggerError) throw options.triggerError; if (options.realEngine) state.wo = await core.runReversible(args[1].woId); return { id: "run-review" }; } },
     runs: { async *subscribeToRun() { if (options.runGate) await options.runGate; options.onRunComplete?.(state.wo); yield { status: "COMPLETED" }; } },
   });
   vm.runInContext(`${runnable}\nglobalThis.handlers = { onApprove, onDeny, runJob, ApprovalCard };`, context);
-  return { ...context.handlers, state, thread, text: () => JSON.stringify(state.posted) };
+  return { ...context.handlers, state, thread, threadFor, text: () => JSON.stringify(state.posted) };
 }
 
 const reports = [];
@@ -86,10 +105,12 @@ function record(name, facts) { reports.push({ name, ...facts }); }
   const h = harness({ newWorkOrder: true });
   const text = "Review Acme's outage. Do not email anyone.";
   await h.state.mention({ thread: h.thread, message: { text, actor: { id: "U_REQUESTER", kind: "human" } } });
-  assert.notEqual(h.state.planned[0], text);
-  assert.ok(h.state.planned[0].includes("Northwind"));
-  assert.deepEqual([...h.state.created[0].approvers], ["U_REQUESTER", "U_OWNER"]);
-  record("short-custom-request-replaced-and-requester-can-approve", { knownLimitation: true, suppliedCustomer: "Acme", plannedCustomer: "Northwind", approvers: [...h.state.created[0].approvers] });
+  assert.equal(h.state.planned.length, 0);
+  assert.equal(h.state.created.length, 0);
+  assert.equal(h.state.triggers.length, 0);
+  assert.ok(h.text().includes("Choose a source thread"));
+  assert.ok(h.text().includes("THREAD-ACME-OUTAGE"));
+  record("custom-request-without-explicit-source-is-refused", { passed: true });
 }
 {
   const wo = baseWorkOrder();
@@ -200,7 +221,7 @@ function record(name, facts) { reports.push({ name, ...facts }); }
 }
 {
   const h = harness({ newWorkOrder: true, planError: new Error("Planning failed: invalid model response") });
-  await h.state.mention({ thread: h.thread, message: { text: "Prepare a customer update", actor: { id: "U_OWNER", kind: "human" } } });
+  await h.state.mention({ thread: h.thread, message: { text: "use fixture customer-success", actor: { id: "U_OWNER", kind: "human" } } });
   assert.equal(h.state.created.length, 0);
   assert.equal(h.state.triggers.length, 0);
   assert.ok(h.text().includes("Planning failed"));
@@ -225,5 +246,154 @@ function record(name, facts) { reports.push({ name, ...facts }); }
   ];
   events.forEach((event) => EventSchemas.parse(event));
   record("proposed-agui-observer-shapes", { passed: true, validatedEvents: events.length });
+}
+
+// Two real humans may play multiple personas across scenarios, but never collapse
+// two approvers of the same work order. These are inert test platform IDs.
+const slackUsers = { U_MAYA: "UALPHA001", U_PRIYA: "UALPHA001", U_LEO: "UBETA0001", U_JULES: "UBETA0001" };
+const datasetEnv = { DATASET_SLACK_USERS: JSON.stringify(slackUsers) };
+const mention = (h, text, thread = h.thread, id = "UREQUEST1") => h.state.mention({ thread, message: { text, actor: { id, kind: "human" } } });
+
+{
+  const h = harness({ newWorkOrder: true, env: { PLANNER_MODE: "stub" } });
+  await mention(h, "@Angie use fixture customer-success");
+  assert.equal(h.state.planned.length, 1);
+  assert.ok(h.state.planned[0].includes("Northwind"));
+  assert.deepEqual([...h.state.created[0].approvers], ["UOWNER001"]);
+  assert.ok(!h.state.created[0].approvers.includes("UREQUEST1"));
+  record("explicit-fixture-keeps-planner-and-configured-approvers-only", { passed: true });
+}
+{
+  const h = harness({ newWorkOrder: true, env: { APPROVERS: "" } });
+  await mention(h, "use fixture customer-success");
+  assert.equal(h.state.planned.length, 0);
+  assert.equal(h.state.created.length, 0);
+  assert.ok(h.text().includes("requester is not automatically an approver"));
+  record("fixture-without-approver-configuration-is-refused", { passed: true });
+}
+
+for (const [threadId, recipient, fact] of [
+  ["THREAD-ACME-OUTAGE", "dana@acme-robotics.example", "18 minutes"],
+  ["THREAD-HELIX-SECURITY", "irina@helix-health.example", "public trust center"],
+  ["THREAD-LANTERN-PRICING", "chris@lantern.example", "20% off list"],
+  ["THREAD-ACME-REFUND", "owen@acme-robotics.example", "not able to offer a service credit"],
+]) {
+  const h = harness({ realEngine: true, conversationKey: `dataset-${threadId}`, env: datasetEnv });
+  await mention(h, `<@UBOT00001> TaKe ThIs ${threadId.toLowerCase()}`);
+  const id = `WO-${runIdFromThreadKey(h.thread.conversationKey)}`;
+  const wo = core.getWorkOrder(id);
+  assert.equal(wo.scenario, threadId);
+  assert.equal(wo.threadRef, runIdFromThreadKey(h.thread.conversationKey));
+  assert.equal(wo.commits[0]?.status, "proposed");
+  assert.equal(wo.commits[0].args.to, recipient);
+  assert.ok(wo.commits[0].args.body.includes(fact));
+  assert.ok(h.text().includes(recipient));
+  assert.ok(h.text().includes(fact));
+  assert.ok(h.text().includes("Awaiting approval"));
+  wo.constraints.forEach(constraint => assert.ok(h.text().includes(constraint)));
+  assert.ok(!wo.approvers.includes("UREQUEST1"));
+  assert.ok(wo.approvers.every(id => /^[UW][A-Z0-9]{8,}$/.test(id)));
+  assert.equal(h.state.planned.length, 0);
+  assert.equal(h.state.triggers.length, 1);
+  if (threadId === "THREAD-LANTERN-PRICING") {
+    assert.deepEqual(wo.approvers, ["UALPHA001"]);
+    assert.ok(!wo.commits[0].args.body.includes("40%"));
+    assert.ok(!wo.commits[0].args.body.includes("founder@"));
+    await h.onApprove(h.thread, "UBETA0001", { woId: id, stepId: wo.steps.at(-1).id });
+    assert.equal(core.getWorkOrder(id).commits[0].status, "proposed");
+    assert.equal(h.state.commits.length, 0);
+    assert.ok(h.text().includes("Not authorized"));
+  }
+  record(`dataset-handler-and-renderer-${threadId}`, { passed: true, recipient, approvers: wo.approvers });
+}
+
+{
+  const h = harness({ realEngine: true, conversationKey: "dataset-reuse-first", env: datasetEnv });
+  await mention(h, "take this THREAD-ACME-OUTAGE");
+  const id = `WO-${runIdFromThreadKey(h.thread.conversationKey)}`;
+  const original = core.getWorkOrder(id);
+  await mention(h, "@Angie take this");
+  await mention(h, "take this THREAD-ACME-OUTAGE");
+  assert.equal(h.state.created.length, 1);
+  assert.equal(h.state.triggers.length, 1);
+  assert.deepEqual(core.getWorkOrder(id), original);
+  await mention(h, "take this THREAD-HELIX-SECURITY");
+  assert.ok(h.text().includes("Source already selected"));
+  assert.equal(h.state.created.length, 1);
+  assert.deepEqual(core.getWorkOrder(id), original);
+  const other = h.threadFor("dataset-reuse-second");
+  await mention(h, "take this THREAD-ACME-OUTAGE", other);
+  const otherId = `WO-${runIdFromThreadKey(other.conversationKey)}`;
+  assert.notEqual(otherId, id);
+  assert.equal(core.getWorkOrder(otherId).scenario, original.scenario);
+  assert.notEqual(core.getWorkOrder(otherId).commits[0].idempotencyKey, original.commits[0].idempotencyKey);
+  assert.equal(h.state.triggers.length, 2);
+  record("dataset-conversation-identity-resume-and-source-lock", { passed: true });
+}
+
+{
+  let finishPlan;
+  const planGate = new Promise(resolve => { finishPlan = resolve; });
+  const h = harness({ realEngine: true, conversationKey: "dataset-source-race", env: datasetEnv, planGate });
+  const fixtureMention = mention(h, "use fixture customer-success");
+  await mention(h, "take this THREAD-ACME-OUTAGE");
+  finishPlan();
+  await fixtureMention;
+  const wo = core.getWorkOrder(`WO-${runIdFromThreadKey(h.thread.conversationKey)}`);
+  assert.equal(wo.scenario, "THREAD-ACME-OUTAGE");
+  assert.deepEqual(wo.approvers, ["UALPHA001", "UBETA0001"]);
+  assert.equal(h.state.triggers.length, 1);
+  assert.ok(h.text().includes("Source already selected"));
+  record("dataset-source-selection-survives-concurrent-fixture-plan", { passed: true });
+}
+
+for (const [name, text, mapping, expected] of [
+  ["empty", "take this THREAD-EMPTY", datasetEnv.DATASET_SLACK_USERS, "needs a customer"],
+  ["unknown", "take this THREAD-NOT-FOUND", datasetEnv.DATASET_SLACK_USERS, "Unknown dataset thread"],
+  ["short-context", "@Angie take this", datasetEnv.DATASET_SLACK_USERS, "Choose a source thread"],
+  ["long-context", "Please help Acme Robotics with a long outage description. This is longer than eighty characters but has no explicit source selection.", datasetEnv.DATASET_SLACK_USERS, "Choose a source thread"],
+  ["missing-env", "take this THREAD-ACME-OUTAGE", "", "not configured"],
+  ["missing-role", "take this THREAD-ACME-OUTAGE", JSON.stringify({ U_MAYA: "UALPHA001" }), "missing an approver mapping for U_LEO"],
+  ["same-thread-duplicate", "take this THREAD-ACME-OUTAGE", JSON.stringify({ U_MAYA: "UALPHA001", U_LEO: "UALPHA001" }), "distinct identity"],
+  ["unknown-role", "take this THREAD-ACME-OUTAGE", JSON.stringify({ ...slackUsers, U_UNKNOWN: "UGAMMA001" }), "unknown dataset user"],
+  ["synthetic-target", "take this THREAD-ACME-OUTAGE", JSON.stringify({ ...slackUsers, U_MAYA: "U_MAYA" }), "real Slack user ID"],
+  ["intern-role", "take this THREAD-ACME-OUTAGE", JSON.stringify({ ...slackUsers, U_SAM: "UGAMMA001" }), "cannot be mapped"],
+  ["agent-role", "take this THREAD-ACME-OUTAGE", JSON.stringify({ ...slackUsers, U_COWORKER: "UALPHA001" }), "cannot be mapped"],
+  ["duplicate-key", "take this THREAD-ACME-OUTAGE", '{"U_MAYA":"UALPHA001","U_MAYA":"UGAMMA001","U_LEO":"UBETA0001"}', "duplicate keys"],
+  ["bad-json", "take this THREAD-ACME-OUTAGE", "{", "must be a JSON object"],
+  ["multiple-selectors", "take this THREAD-ACME-OUTAGE THREAD-HELIX-SECURITY", datasetEnv.DATASET_SLACK_USERS, "one explicit source"],
+]) {
+  const h = harness({ realEngine: true, conversationKey: `dataset-refused-${name}`, env: { DATASET_SLACK_USERS: mapping } });
+  await mention(h, text);
+  assert.equal(core.findWorkOrder(`WO-${runIdFromThreadKey(h.thread.conversationKey)}`), undefined);
+  assert.equal(h.state.created.length, 0);
+  assert.equal(h.state.planned.length, 0);
+  assert.equal(h.state.triggers.length, 0);
+  assert.ok(h.text().includes(expected), `${name}: ${h.text()}`);
+  record(`dataset-refuses-${name}`, { passed: true });
+}
+
+{
+  const h = harness({ realEngine: true, conversationKey: "dataset-callback", env: datasetEnv });
+  await mention(h, "take this THREAD-LANTERN-PRICING");
+  const wo = core.getWorkOrder(`WO-${runIdFromThreadKey(h.thread.conversationKey)}`);
+  const stepId = wo.steps.at(-1).id;
+  const registry = new ActionRegistry({ store: kvActionStore(new MemoryStore()) });
+  registry.registerComponent("ApprovalCard", h.ApprovalCard);
+  const tree = await registry.bindTree("ApprovalCard", { woId: wo.id, stepId }, h.thread.conversationKey);
+  function findAction(nodes) { for (const n of nodes) { if (n.props?.onClick?.id) return n.props.onClick.id; const found = findAction(n.props?.children ?? []); if (found) return found; } }
+  const actionId = findAction(tree);
+  assert.ok(actionId);
+  const dispatch = actorId => registry.dispatch(actionId, { thread: h.thread, actor: { id: actorId, kind: "human" }, platform: "slack", action: { id: actionId }, values: {}, user: null, message: { ref: { id: "mock-message" }, text: "", actor: { id: actorId, kind: "human" }, user: null, platform: "slack" } });
+  const before = readOutbox().length;
+  await dispatch("UBETA0001");
+  assert.equal(core.getWorkOrder(wo.id).commits[0].status, "proposed");
+  assert.equal(readOutbox().length, before);
+  await dispatch("UALPHA001");
+  assert.equal(core.getWorkOrder(wo.id).commits[0].status, "committed");
+  await dispatch("UALPHA001");
+  assert.equal(readOutbox().length, before + 1);
+  assert.ok(h.text().includes("Already committed"));
+  record("dataset-real-card-click-enforces-actor-and-reuses-local-receipt", { passed: true, localOutboxRowsAdded: 1, externalSends: 0 });
 }
 console.log(JSON.stringify({ mode: "offline-handler-review", source: "src/channel/listener.tsx", reports }, null, 2));

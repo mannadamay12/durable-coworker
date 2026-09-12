@@ -401,3 +401,18 @@ for dataset grounding and the README "assertions the tests should lock". It uses
 test's pattern: isolated `STATE_DIR`, plain `assert`, no framework.
 
 Rules out: adding further test files without a similar gate-level reason.
+
+## D40. Slack dataset sources are explicit and synthetic approvers map through deployment config
+
+The listener cannot infer a dataset from mention length because Channels provides only
+the mention text. A new conversation must say `take this THREAD-*` or explicitly opt
+into `use fixture customer-success`; an empty, unknown or ambiguous selector creates
+no work order. `DATASET_SLACK_USERS` maps each seeded approver to a real workspace
+member before `createFromThread` is called. A real member may represent several
+fictional personas in different scenarios, but two approvers on one work order must
+remain distinct. The requester is never added automatically, and `U_SAM` / the agent
+identity cannot be mapped.
+
+Rules out: silently planning from Northwind for a long arbitrary mention, inventing
+Slack accounts, or letting a source-selection race replace an already grounded
+conversation.

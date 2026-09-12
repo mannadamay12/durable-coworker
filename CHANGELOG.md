@@ -9,6 +9,7 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `16:01` — Dataset integration completed after pulling main: explicit Slack source selectors, real-ID approver mapping, static JSON bundling, engine-built recovery beats, CLI flows, and refusal/injection checks are covered by the combined offline gate — branch ready for review and merge; no external Slack accounts or messages were created
 - `15:44` — Dataset grounding (D36–D39; originally D35–D38), after the 15:30 submission: dataset threads now ground research, draft, tasks, constraints and the frozen proposal; `cli.ts load <beat>` and `create --thread` build the six recovery beats through the engine. `src/core/scenarios.test.ts` passes: 4 customer threads grounded; Northwind `status.publish` fails before proposal; `THREAD-EMPTY` creates nothing; kill/resume keeps 2 tasks; retry and reconcile keep outbox at 1; U_SAM rejected; deny blocks. Typecheck clean, kill test 10/10 — Slack listener still plans from `customer-success`; not run live.
 
 - `15:36` — Added recovery hardening after the merged Slack/mirror review: authoritative receipt returns, explicit planner validation/stub mode, unknown-outcome-safe Slack cards and continuation coalescing, mirror failure isolation and local-first snapshots; focused core/planner/mirror regressions pass — PR ready with remaining diagnostic failures documented

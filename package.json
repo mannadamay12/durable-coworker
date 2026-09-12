@@ -10,9 +10,12 @@
     "dev:worker": "trigger dev",
     "kill": "node scripts/kill-worker.mjs",
     "kill:dry": "node scripts/kill-worker.mjs --dry",
-    "reset": "rm -rf state && mkdir -p state && echo 'state cleared'",
+    "reset": "node --env-file-if-exists=.env --import tsx src/cli.ts reset",
     "typecheck": "tsc --noEmit",
-    "test:kill": "node scripts/kill-worker.test.mjs"
+    "test:kill": "node scripts/kill-worker.test.mjs",
+    "test:datasets": "node --import tsx src/core/scenarios.test.ts",
+    "test:bundle": "node scripts/dataset-bundle.test.mjs",
+    "verify": "node scripts/verify-integration.mjs"
   },
   "dependencies": {
     "@copilotkit/channels": "0.9.2",

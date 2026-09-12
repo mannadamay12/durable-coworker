@@ -6,10 +6,15 @@ import { type Context, draftFor, loadContext } from "./context.js";
 function groundedArgs(ctx: Context, commitStep: Step, drafted: string | undefined): Record<string, unknown> {
   const tool = commitStep.tool ?? "";
   if (!COMMIT_TOOLS.has(tool)) throw new Error(`${tool} has no registered commit tool`);
+  if (tool !== ctx.thread.commitTool) throw new Error(`commit tool differs from ${ctx.thread.id} source`);
   const draft = draftFor(ctx);
   if (draft instanceof Error) throw draft;
   if (!drafted) throw new Error("no draft recorded on the work order");
+  // The dataset demo uses curated drafts. This is source-integrity validation,
+  // not a general language-model checker for arbitrary natural-language constraints.
+  if (drafted !== draft.body) throw new Error(`recorded draft differs from curated source for ${ctx.thread.id}`);
   if (tool === "mail.send") {
+    if (draft.to !== ctx.thread.commitTarget) throw new Error(`recipient differs from ${ctx.thread.id} commitTarget`);
     if (!ctx.customer.contacts.some((c) => c.email === draft.to)) {
       throw new Error(`recipient ${draft.to} is not a contact of ${ctx.customer.name}`);
     }
