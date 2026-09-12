@@ -1,13 +1,38 @@
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 
 import { createChannel } from "@copilotkit/channels";
-import { Context, Header, Markdown, Message, Section } from "@copilotkit/channels/ui";
+import {
+  Actions,
+  Button,
+  Context,
+  Field,
+  Fields,
+  Header,
+  type InteractionContext,
+  Markdown,
+  Message,
+  Section,
+} from "@copilotkit/channels/ui";
 import { CopilotKitIntelligence, CopilotRuntime } from "@copilotkit/runtime/v2";
 import { createCopilotNodeListener } from "@copilotkit/runtime/v2/node";
 import { runs, tasks } from "@trigger.dev/sdk";
 
-import { STATE_DIR, TOTAL_STEPS, readState, runIdFromThreadKey, statePath } from "../core/state.js";
-import type { smokeTask } from "../trigger/smoke.js";
+import { plan } from "../agent/plan.js";
+import {
+  NotApprovedError,
+  NotAuthorizedError,
+  type WorkOrder,
+  commit,
+  createWorkOrder,
+  deny,
+  findWorkOrder,
+  getWorkOrder,
+  pendingApproval,
+} from "../core/index.js";
+import { outboxRows } from "../core/inspect.js";
+import { STATE_DIR, runIdFromThreadKey } from "../core/state.js";
+import type { workorderTask } from "../trigger/workorder.js";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -20,128 +45,288 @@ const log = (msg: string) => console.log(`[channel ${new Date().toISOString()}] 
 const CHANNEL_CODE = required("CHANNEL_CODE");
 required("TRIGGER_SECRET_KEY"); // fail at boot, not on the first mention
 
-/** Run states that mean "this run is over and did not finish the work". */
-const TERMINAL_INCOMPLETE = new Set([
-  "CANCELED",
-  "FAILED",
-  "CRASHED",
-  "SYSTEM_FAILURE",
-  "EXPIRED",
-  "TIMED_OUT",
-]);
+// Channels hands us only the mention's own text, not the thread history, so the demo
+// thread comes from the fixture unless the mention itself carries a real brief.
+const FIXTURE = JSON.parse(
+  readFileSync(new URL("../../scenarios/customer-success.json", import.meta.url), "utf8"),
+) as { id: string; threadText: string };
 
-// No `agent` — this is a smoke test, there is no model in the loop.
+const ENV_APPROVERS = (process.env.APPROVERS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+
+/** Run states that end a run. */
+const TERMINAL = new Set(["COMPLETED", "CANCELED", "FAILED", "CRASHED", "SYSTEM_FAILURE", "EXPIRED", "TIMED_OUT"]);
+
+const ACCENT = { info: "#2D7FF9", wait: "#E67E22", ok: "#27AE60", stop: "#C0392B" };
+
+/** Mention and click handlers get different thread types; cards only need post. */
+type Thread = Pick<InteractionContext["thread"], "post">;
+type StepRef = { woId: string; stepId: string };
+
+const who = (slackId: string) => `<@${slackId}>`;
+
+function stepLines(wo: WorkOrder): string {
+  return wo.steps.map((s) => `\`${s.status}\`  ${s.kind === "commit" ? "*commit*" : "reversible"}  ${s.name}`).join("\n");
+}
+
+function StatusCard(props: { woId: string; title: string; accent: string; note: string }) {
+  const wo = getWorkOrder(props.woId);
+  return (
+    <Message accent={props.accent}>
+      <Header>{`${props.title} · ${wo.id}`}</Header>
+      <Section>
+        <Markdown>{stepLines(wo)}</Markdown>
+      </Section>
+      <Context>{props.note}</Context>
+    </Message>
+  );
+}
+
+function NoticeCard(props: { accent: string; title: string; body: string; note: string }) {
+  return (
+    <Message accent={props.accent}>
+      <Header>{props.title}</Header>
+      <Section>
+        <Markdown>{props.body}</Markdown>
+      </Section>
+      <Context>{props.note}</Context>
+    </Message>
+  );
+}
+
+/** Registered with the channel so a click after a listener restart can still find its handler. */
+function ApprovalCard(props: StepRef) {
+  const wo = getWorkOrder(props.woId);
+  const step = wo.steps.find((s) => s.id === props.stepId);
+  const entry = wo.commits.find((e) => e.idempotencyKey.startsWith(`${wo.id}:${props.stepId}:`));
+  const args = (entry?.args ?? {}) as Record<string, unknown>;
+  const preview = typeof args.body === "string" ? args.body : JSON.stringify(args, null, 2);
+  const ref: StepRef = { woId: props.woId, stepId: props.stepId };
+  return (
+    <Message accent={ACCENT.wait}>
+      <Header>{`Approval needed: ${step?.name ?? props.stepId}`}</Header>
+      <Fields>
+        <Field label="Tool">{entry?.tool ?? step?.tool ?? "unknown"}</Field>
+        <Field label="Target">{String(args.to ?? args.workOrder ?? wo.id)}</Field>
+        <Field label="Approvers">{wo.approvers.map(who).join(" ")}</Field>
+        <Field label="Work order">{wo.id}</Field>
+      </Fields>
+      <Section>
+        <Markdown>{`\`\`\`\n${preview}\n\`\`\``}</Markdown>
+      </Section>
+      <Context>
+        {wo.constraints.length
+          ? `Constraints: ${wo.constraints.map((c) => `[ ${c} ]`).join("  ")}`
+          : "No constraints extracted"}
+      </Context>
+      <Actions>
+        <Button style="primary" value={ref} onClick={(ctx) => onApprove(ctx.thread, ctx.actor.id, ctx.action.value ?? ref)}>
+          Approve
+        </Button>
+        <Button style="danger" value={ref} onClick={(ctx) => onDeny(ctx.thread, ctx.actor.id, ctx.action.value ?? ref)}>
+          Deny
+        </Button>
+      </Actions>
+    </Message>
+  );
+}
+
+const notice = (thread: Thread, accent: string, title: string, body: string, note: string) =>
+  thread.post(<NoticeCard accent={accent} title={title} body={body} note={note} />);
+
+async function errorCard(thread: Thread, err: unknown): Promise<void> {
+  const message = err instanceof Error ? err.message : String(err);
+  log(`ERROR ${message}`);
+  await notice(thread, ACCENT.stop, "Something went wrong", `\`${message}\``, "Nothing was sent. The listener is still up.");
+}
+
+/**
+ * Trigger the job and wait for it here. D21: a Thread is writable only while this
+ * delivery is open, so the result card must be posted before the handler returns.
+ */
+async function runJob(thread: Thread, woId: string): Promise<void> {
+  // No idempotencyKey (D18); ttl 0 so a resume queued after a long pause does not expire.
+  const handle = await tasks.trigger<typeof workorderTask>("workorder", { woId }, { tags: [`wo:${woId}`], ttl: 0 });
+  log(`trigger ${woId} -> ${handle.id}`);
+  let status = "UNKNOWN";
+  for await (const run of runs.subscribeToRun(handle.id)) {
+    if (TERMINAL.has(run.status)) {
+      status = run.status;
+      break;
+    }
+  }
+  const wo = getWorkOrder(woId);
+  log(`run ${handle.id} ${status}: ${wo.steps.map((s) => `${s.id}=${s.status}`).join(" ")}`);
+
+  if (status !== "COMPLETED") {
+    await thread.post(
+      <StatusCard
+        woId={woId}
+        title={`Interrupted (${status})`}
+        accent={ACCENT.wait}
+        note="Progress is kept. Mention me again in this thread to resume from here."
+      />,
+    );
+    return;
+  }
+  const pending = pendingApproval(wo);
+  if (pending) {
+    await thread.post(<ApprovalCard woId={woId} stepId={pending.step.id} />);
+    return;
+  }
+  const stopped = wo.steps.find((s) => s.status === "rejected" || s.status === "blocked" || s.status === "failed");
+  await thread.post(
+    <StatusCard
+      woId={woId}
+      title={stopped ? `Stopped at ${stopped.id}` : "Finished"}
+      accent={stopped ? ACCENT.stop : ACCENT.ok}
+      note={`Outbox: ${outboxRows().length} message(s)`}
+    />,
+  );
+}
+
+async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<void> {
+  log(`approve click ${ref.woId}/${ref.stepId} by ${actor}`);
+  try {
+    const result = await commit(ref.woId, ref.stepId, actor);
+    if (result.reused) {
+      await notice(
+        thread,
+        ACCENT.ok,
+        "Already committed",
+        `\`${ref.stepId}\` was already sent. Same receipt: \`${result.externalId}\`. Nothing was sent again.`,
+        `Outbox: ${outboxRows().length} message(s)`,
+      );
+      return;
+    }
+    if (result.status !== "committed") {
+      await notice(
+        thread,
+        ACCENT.wait,
+        `Commit ${result.status}`,
+        `\`${ref.stepId}\` did not confirm a send. It will not be retried blindly.`,
+        `Outbox: ${outboxRows().length} message(s)`,
+      );
+      return;
+    }
+    await notice(
+      thread,
+      ACCENT.ok,
+      "Committed",
+      `\`${ref.stepId}\` approved by ${who(actor)}. Receipt: \`${result.externalId}\``,
+      `Outbox: ${outboxRows().length} message(s)`,
+    );
+    await runJob(thread, ref.woId);
+  } catch (err) {
+    if (err instanceof NotAuthorizedError) {
+      await notice(
+        thread,
+        ACCENT.stop,
+        "Not authorized",
+        `${who(actor)} cannot approve this step. Only ${err.approvers.map(who).join(", ")} can.`,
+        "Anyone can click. Only an approver moves a step.",
+      );
+      return;
+    }
+    if (err instanceof NotApprovedError) {
+      await notice(thread, ACCENT.stop, "Not approvable", `\`${ref.stepId}\` was denied or has no proposal. Nothing was sent.`, ref.woId);
+      return;
+    }
+    await errorCard(thread, err);
+  }
+}
+
+async function onDeny(thread: Thread, actor: string, ref: StepRef): Promise<void> {
+  log(`deny click ${ref.woId}/${ref.stepId} by ${actor}`);
+  try {
+    deny(ref.woId, ref.stepId, actor);
+    await notice(
+      thread,
+      ACCENT.stop,
+      `Stopped by ${actor}`,
+      `Stopped by ${who(actor)}. ${ref.woId} blocked at \`${ref.stepId}\`.`,
+      "Nothing will be sent for this work order.",
+    );
+  } catch (err) {
+    if (err instanceof NotAuthorizedError) {
+      await notice(
+        thread,
+        ACCENT.stop,
+        "Not authorized",
+        `${who(actor)} cannot deny this step. Only ${err.approvers.map(who).join(", ")} can.`,
+        "Anyone can click. Only an approver moves a step.",
+      );
+      return;
+    }
+    await errorCard(thread, err);
+  }
+}
+
 const channel = createChannel({
   name: CHANNEL_CODE,
   identifyUser: "platform",
+  components: [ApprovalCard, StatusCard, NoticeCard],
 });
 
 channel.onMention(async ({ thread, message }) => {
   // Never react to our own cards or another app's.
   if (message.actor?.kind === "bot" || message.actor?.kind === "app") return;
 
-  const runId = runIdFromThreadKey(thread.conversationKey);
-  const prior = readState(runId);
-  const resuming = prior.steps.length > 0;
-
-  let handle: Awaited<ReturnType<typeof tasks.trigger<typeof smokeTask>>>;
+  const threadRef = runIdFromThreadKey(thread.conversationKey);
+  const woId = `WO-${threadRef}`;
   try {
-    // No idempotencyKey on purpose. A killed run lands in CANCELED and keeps its
-    // key, so re-triggering with one would hand back the dead run's handle and
-    // nothing would execute. The runId lives in the payload instead; the tag
-    // makes the run findable.
-    handle = await tasks.trigger<typeof smokeTask>(
-      "smoke",
-      { runId },
-      { tags: [`smoke:${runId}`], ttl: 0 },
-    );
-  } catch (err) {
-    log(`trigger FAILED for ${runId}: ${(err as Error).message}`);
-    await thread.post(
-      <Message accent="#C0392B">
-        <Header>Could not start the job</Header>
-        <Section>
-          <Markdown>{`\`${runId}\` — ${(err as Error).message}`}</Markdown>
-        </Section>
-        <Context>Is the Trigger.dev dev worker running in terminal B?</Context>
-      </Message>,
-    );
-    return;
-  }
-
-  log(
-    `mention -> runId=${runId} triggerRun=${handle.id} ` +
-      `${resuming ? `RESUME (prior: ${prior.steps.join(",")})` : "FRESH"}`,
-  );
-
-  await thread.post(
-    <Message accent={resuming ? "#E67E22" : "#2D7FF9"}>
-      <Header>{resuming ? "Resuming" : "Starting"}</Header>
-      <Section>
-        <Markdown>{`started \`${runId}\``}</Markdown>
-      </Section>
-      <Context>
-        {resuming
-          ? `steps already recorded: ${prior.steps.join(", ")} · trigger run ${handle.id}`
-          : `fresh start, 0 of ${TOTAL_STEPS} steps recorded · trigger run ${handle.id}`}
-      </Context>
-    </Message>,
-  );
-
-  // Watch the run from this process and post the closing card. The task itself
-  // has no Slack connection — the listener owns the gateway socket and must
-  // stay up (CLAUDE.md invariant 6), so completion reporting belongs here.
-  // Awaited on purpose: the delivery seals when this handler returns, and any
-  // later thread.post is rejected ("no longer accepts Thread operations"). The
-  // SDK has no public way to post to a thread outside its delivery.
-  await (async () => {
-    try {
-      for await (const run of runs.subscribeToRun(handle.id)) {
-        if (run.status === "COMPLETED") {
-          const s = readState(runId);
-          log(`run ${handle.id} COMPLETED — ${runId} recorded [${s.steps.join(",")}]`);
-          await thread.post(
-            <Message accent="#27AE60">
-              <Header>Finished</Header>
-              <Section>
-                <Markdown>{`\`${runId}\` completed all ${TOTAL_STEPS} steps.`}</Markdown>
-              </Section>
-              <Context>{`recorded: ${s.steps.join(", ")} · ${statePath(runId)}`}</Context>
-            </Message>,
-          );
-          return;
-        }
-        if (TERMINAL_INCOMPLETE.has(run.status)) {
-          const s = readState(runId);
-          log(`run ${handle.id} ${run.status} — ${runId} kept [${s.steps.join(",")}]`);
-          await thread.post(
-            <Message accent="#E67E22">
-              <Header>{`Interrupted (${run.status})`}</Header>
-              <Section>
-                <Markdown>
-                  {`\`${runId}\` stopped mid-flight. Progress kept: ${
-                    s.steps.length ? s.steps.join(", ") : "none"
-                  }.`}
-                </Markdown>
-              </Section>
-              <Context>Mention me again in this thread to resume from here.</Context>
-            </Message>,
-          );
-          return;
-        }
-      }
-    } catch (err) {
-      log(`watch ${handle.id} failed: ${(err as Error).message}`);
+    let wo = findWorkOrder(woId);
+    if (!wo) {
+      const threadText = message.text.trim().length > 80 ? message.text : FIXTURE.threadText;
+      const planned = await plan(threadText);
+      const approvers = [...new Set([message.actor.id, ...ENV_APPROVERS])];
+      wo = createWorkOrder({
+        id: woId,
+        scenario: FIXTURE.id,
+        threadRef,
+        constraints: planned.constraints,
+        approvers,
+        steps: planned.steps,
+      });
+      log(`mention -> created ${woId} approvers=${approvers.join(",")}`);
     }
-  })();
+
+    const pending = pendingApproval(wo);
+    if (pending) {
+      log(`mention -> ${woId} already waiting at ${pending.step.id}; re-posting approval card`);
+      await thread.post(<ApprovalCard woId={woId} stepId={pending.step.id} />);
+      return;
+    }
+
+    const recorded = wo.steps.filter((s) => s.status === "done" || s.status === "committed");
+    if (recorded.length === wo.steps.length) {
+      await thread.post(
+        <StatusCard woId={woId} title="Finished" accent={ACCENT.ok} note={`Outbox: ${outboxRows().length} message(s)`} />,
+      );
+      return;
+    }
+    log(`mention -> ${woId} ${recorded.length ? `RESUME (recorded: ${recorded.map((s) => s.id).join(",")})` : "FRESH"}`);
+    await thread.post(
+      <StatusCard
+        woId={woId}
+        title={recorded.length ? "Resuming" : "Starting"}
+        accent={ACCENT.info}
+        note={
+          recorded.length
+            ? `Already recorded, will not re-run: ${recorded.map((s) => s.id).join(", ")}`
+            : `Approvers: ${wo.approvers.map(who).join(" ")} · constraints: ${wo.constraints.join("; ") || "none"}`
+        }
+      />,
+    );
+    await runJob(thread, woId);
+  } catch (err) {
+    await errorCard(thread, err);
+  }
 });
 
 const intelligence = new CopilotKitIntelligence({
   apiKey: required("CPK_INTELLIGENCE_API_KEY"),
   ...(process.env.INTELLIGENCE_API_URL ? { apiUrl: process.env.INTELLIGENCE_API_URL } : {}),
-  ...(process.env.INTELLIGENCE_GATEWAY_WS_URL
-    ? { wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL }
-    : {}),
+  ...(process.env.INTELLIGENCE_GATEWAY_WS_URL ? { wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL } : {}),
 });
 
 const runtime = new CopilotRuntime({
