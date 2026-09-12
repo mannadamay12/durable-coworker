@@ -253,3 +253,60 @@ An eventual AG-UI observer should preserve this separation: stream projections o
 durable facts, and send authenticated human commands through the existing backend
 authorization boundary. UI state patches or replayed events do not grant commit
 authority. The review prototype is not a deployed AG-UI implementation.
+
+## D25. `node:sqlite`, not `better-sqlite3`
+
+The ledger and work orders live in `state/durable.db` through Node's built-in
+`node:sqlite`. No native build, which already cost time today with a wrong-platform
+`node_modules`, and Trigger.dev's bundler keeps it external. `better-sqlite3` stays in
+`package.json` unused.
+
+The database is opened per call, never held. `npm run reset` deletes `state/`, and a
+long-lived handle in the listener would keep writing to the deleted file.
+
+Rules out: deploying on Node older than 22.13. Prints one ExperimentalWarning per process.
+
+## D26. An approver's `commit()` on a proposed entry is the approval
+
+The Approve click calls `commit(woId, stepId, actor)` directly. For an allowlisted actor on
+a `proposed` entry, core records the approval and sends in one transaction, after the
+authorization check. There is one proposal per commit step and its args are frozen at
+proposal time, so the approver approves exactly what is sent.
+
+Rules out: a separate `approve()` round trip from Slack, and editing commit args after the
+card is posted. Callers must not `putWorkOrder` after creation: it is last-write-wins on
+the whole record.
+
+## D27. Planner falls back to a deterministic stub; the override is always real
+
+When OpenRouter fails or `PLANNER_MODE=stub`, `plan()` returns the scenario fixture and
+logs `Classifier stubbed, override real.` `enforceCommitTools` runs on every output from
+either path, and core enforces `COMMIT_TOOLS` again on create, put and run.
+
+`classifiedBy: "allowlist_override"` is set on every `COMMIT_TOOLS` step, including when
+the model already said `commit`. The planner schema's `tool` is an enum, so a near-miss
+like `mail_send` cannot slip past the exact-match check.
+
+Rules out: describing constraints or classification as model-extracted for any run that
+logged the stub line, and using `classifiedBy` as a "model was wrong" badge (the
+`[planner] OVERRIDE` log line is that signal).
+
+## D28. The mentioning user is an approver, and planning uses the fixture thread
+
+Channels passes the mention's own text, not the thread history. The listener plans from
+`scenarios/customer-success.json` `threadText` unless the mention is over 80 characters.
+Approvers are the mentioning user plus `APPROVERS` from the environment.
+
+Rules out: claiming the planner read the live Slack thread, and presenting the demo as
+separation of duties (the requester can approve their own send).
+
+## D29. The mirror always writes `state/workorder.md`
+
+`mirror(wo)` writes the rendered work order to `state/workorder.md` on every call, and also
+upserts an Ambiguous doc when `AMBIGUOUS_API_KEY` is set and `MIRROR_MODE` is not `file`.
+Doc ids live in `state/mirror-docs.json`, not SQLite, so core stays free of Ambiguous
+(invariant 7) and `npm run reset` gives each take a fresh doc. Commit paths call
+`mirrorSoon(wo)`, never an awaited `mirror()` (D5).
+
+Rules out: a demo that depends on Ambiguous being reachable. A kill between doc creation
+and the id write leaves an orphan doc.
