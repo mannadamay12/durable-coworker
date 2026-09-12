@@ -205,3 +205,20 @@ demo with one job at a time.
 
 Rules out: fire-and-forget watchers, and any job that runs longer than we are willing to
 hold a delivery open (a long human approval wait will need a different posting path).
+
+## D22. OpenRouter is the model provider, not a failover
+
+PRD section 9 lists "OpenRouter failover" on the cut list. Reversed: there is no OpenAI
+API key available, so OpenRouter is the primary and only path. Codex credits are a
+subscription for their coding agent and cannot authenticate an API call.
+
+It is OpenAI-API-compatible, so this costs one `baseURL` override on the client we
+already installed. Two non-obvious requirements come with it: `provider:
+{ require_parameters: true }`, because the same model is served by many endpoints and
+only some honour strict structured outputs, and a JSON-parse retry, because enforcement
+is per-endpoint rather than platform-wide. Model pinned to `google/gemini-3.8-flash`,
+whose endpoints all support structured outputs.
+
+Rules out nothing we wanted. The risk it adds is one more provider between us and a
+classification, which is why the planner keeps a deterministic fallback and the
+COMMIT_TOOLS override stays model-free.
