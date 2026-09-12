@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+state/
+.trigger/
+*.log
+.DS_Store
+
+# FUSE mount artifacts
+.fuse_hidden*
