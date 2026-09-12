@@ -61,20 +61,24 @@ npm run dev:worker
 |---|---|---|
 | 1 | `npm run reset` | `state cleared` |
 | 2 | @mention the bot in a Slack thread | Card: **Starting** — `started <runId>`, `fresh start, 0 of 5 steps recorded` |
-| 3 | Watch terminal B | `step 1/5 DONE`, `step 2/5 DONE`, `step 3/5 DONE`, one second apart |
+| 3 | `cat state/<runId>.json` (or the run log in the Trigger.dev dashboard) | steps grow `[1]`, `[1,2]`, `[1,2,3]`, one second apart. Terminal B only prints run start/finish. |
 | 4 | After step 3, terminal C: `npm run kill` | `killed <pid>` then `Listener untouched.` Terminal B dies. |
 | 5 | Slack | Card: **Interrupted (CANCELED)** — `Progress kept: 1, 2, 3` |
 | 6 | `cat state/<runId>.json` | `"steps": [1, 2, 3]` |
-| 7 | Slack: type anything in the same thread (no mention) | Bot still answers the delivery. **It was never down.** |
+| 7 | Terminal A | Still `ONLINE`, no restart. The listener has no plain-message handler, so it will not reply to a non-mention message. |
 | 8 | Terminal B: `npm run dev:worker` | worker back up |
 | 9 | @mention **in the same thread** | Card: **Resuming** — same `<runId>`, `steps already recorded: 1, 2, 3` |
-| 10 | Watch terminal B | `step 1/5 SKIPPED`, `2 SKIPPED`, `3 SKIPPED`, then `step 4/5 DONE`, `step 5/5 DONE` |
+| 10 | Terminal A + `cat state/<runId>.json` | `RESUME (prior: 1,2,3)`, then `COMPLETED ... recorded [1,2,3,4,5]`. SKIPPED/DONE lines are in the dashboard run log; terminal B shows about 2s instead of 5s. |
 | 11 | Slack | Card: **Finished** — all 5 steps |
 
 Step 10 is the whole test. Only 4 and 5 do work.
 
 `npm run kill -- --dry` lists what would be killed without signalling. Use it before
 filming.
+
+To stop the listener deliberately (e.g. to pick up a code change), use `kill -TERM`;
+it does not exit on Ctrl-C while the gateway is connected, and a second copy fails on
+port 3000.
 
 ---
 
@@ -105,7 +109,9 @@ resume would silently expire if more than 10 minutes passed between kill and res
 
 The task has no Slack connection — the listener owns the gateway socket. So the
 listener subscribes to the run it just triggered (`runs.subscribeToRun`) and posts the
-closing card itself. A side benefit: the listener surviving the worker's death is what
+closing card itself, and the mention handler stays open until the run is terminal:
+Channels seals the delivery when the handler returns, after which `thread.post` is
+rejected (D21). A side benefit: the listener surviving the worker's death is what
 makes the **Interrupted** card possible at all.
 
 ## Why the watchdog is left alive

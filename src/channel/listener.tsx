@@ -91,9 +91,10 @@ channel.onMention(async ({ thread, message }) => {
   // Watch the run from this process and post the closing card. The task itself
   // has no Slack connection — the listener owns the gateway socket and must
   // stay up (CLAUDE.md invariant 6), so completion reporting belongs here.
-  // Deliberately not awaited: the handler must return so the delivery loop is
-  // free for the next message.
-  void (async () => {
+  // Awaited on purpose: the delivery seals when this handler returns, and any
+  // later thread.post is rejected ("no longer accepts Thread operations"). The
+  // SDK has no public way to post to a thread outside its delivery.
+  await (async () => {
     try {
       for await (const run of runs.subscribeToRun(handle.id)) {
         if (run.status === "COMPLETED") {

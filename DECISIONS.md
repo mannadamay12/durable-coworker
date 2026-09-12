@@ -189,3 +189,19 @@ path segment kills it by accident. That specific case is pinned in
 `scripts/kill-worker.test.mjs` along with the listener exclusion. The kill is also
 scoped to the current project root so a dev worker for another repo on the same machine
 survives.
+
+## D21. The mention handler awaits the run watch
+
+Refines D19. In managed Channels a `Thread` is only writable while its delivery is open,
+and the delivery seals the moment the handler returns: any later `thread.post` rejects
+with `ChannelDeliveryOperationsClosedError`. There is no public API to post to a thread
+outside a delivery (the `Channel` interface says channels are runtime-driven only). So
+the handler stays inside `runs.subscribeToRun` until the run is terminal, and posts the
+closing card before returning.
+
+Cost: one delivery slot held per running job. The transport allows 8 concurrent
+deliveries by default and store concurrency defaults to `parallel`, which is fine for a
+demo with one job at a time.
+
+Rules out: fire-and-forget watchers, and any job that runs longer than we are willing to
+hold a delivery open (a long human approval wait will need a different posting path).
