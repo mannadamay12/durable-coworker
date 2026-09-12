@@ -9,6 +9,7 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `15:11` — Synced review branch with local main `6cb8c6a` after pulling; preserved D23–D29 and separated passing baseline gates from failing edge-case probes; typecheck and 13 kill-matcher checks pass — review package prepared for PR and parallel implementation
 - `15:04` — With explicit user authorization, interacted with Angie in native Slack and captured real UI; new Acme test reached Starting with a persisted two-step plan, but both steps remained pending and no tool/ledger activity was recorded — live initial-card verification added in `notes/review-live-slack.md`; worker completion and new approval unverified
 - `14:54` — Pulled and reviewed `54afa04`, including the new standalone document mirror; worker/listener still have no mirror calls and rendered document omits draft outputs — integration and verification plan updated for the latest merge
 - `14:54` — main at `54afa04` holds all four lanes: typecheck clean, `src/core/kill.test.ts` 10/10 pass (kill mid-run, resume, non-approver rejected, retry reuses receipt, landed-but-unrecorded send reconciled, deny blocks) — integration next: nothing calls `mirror` from the job or listener yet
