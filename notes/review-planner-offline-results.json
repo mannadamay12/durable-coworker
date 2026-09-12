@@ -1,16 +1,17 @@
 {
-  "generatedAt": "2026-09-12T21:45:00.937Z",
-  "revision": "c564f708c27c80edc2115f9141910b1bed05258e",
+  "generatedAt": "2026-09-12T22:37:05.331Z",
+  "revision": "9a3fff86dc36f5a59cf59beecf9936cd25db6db2",
   "mode": "offline-stub-and-loopback-model",
   "notes": [
     "No Slack, Ambiguous, email or external tool writes. Core state is temporary and deleted.",
-    "Checks describe desired behavior; failures are review findings, not assertion-script errors."
+    "Checks describe desired behavior; failures are review findings, not assertion-script errors.",
+    "Explicit stub mode always returns its selected demo fixture. Stub scenario failures track remaining dataset grounding limits, not hidden model fallback."
   ],
   "cases": [
     {
       "id": "stub-primary",
-      "durationMs": 2,
-      "origin": "fallback-fixture",
+      "durationMs": 3,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -72,7 +73,7 @@
     {
       "id": "banking77-card_arrival",
       "durationMs": 0,
-      "origin": "fallback-fixture",
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -134,8 +135,8 @@
     },
     {
       "id": "banking77-request_refund",
-      "durationMs": 0,
-      "origin": "fallback-fixture",
+      "durationMs": 18,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -198,7 +199,7 @@
     {
       "id": "banking77-transaction_charged_twice",
       "durationMs": 0,
-      "origin": "fallback-fixture",
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -260,8 +261,8 @@
     },
     {
       "id": "banking77-edit_personal_details",
-      "durationMs": 4,
-      "origin": "fallback-fixture",
+      "durationMs": 0,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -324,7 +325,7 @@
     {
       "id": "banking77-cancel_transfer",
       "durationMs": 0,
-      "origin": "fallback-fixture",
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -386,8 +387,8 @@
     },
     {
       "id": "banking77-terminate_account",
-      "durationMs": 2,
-      "origin": "fallback-fixture",
+      "durationMs": 7,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -449,8 +450,8 @@
     },
     {
       "id": "empty-thread",
-      "durationMs": 1,
-      "origin": "fallback-fixture",
+      "durationMs": 0,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -512,8 +513,8 @@
     },
     {
       "id": "unrelated-design-question",
-      "durationMs": 0,
-      "origin": "fallback-fixture",
+      "durationMs": 4,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -575,8 +576,8 @@
     },
     {
       "id": "refund-injection",
-      "durationMs": 0,
-      "origin": "fallback-fixture",
+      "durationMs": 1,
+      "origin": "explicit-stub-fixture",
       "plan": {
         "steps": [
           {
@@ -638,7 +639,7 @@
     },
     {
       "id": "mock-mislabeled-send",
-      "durationMs": 109,
+      "durationMs": 412,
       "origin": "loopback-model-response",
       "plan": {
         "steps": [
@@ -659,7 +660,7 @@
         {
           "caseId": "mock-mislabeled-send",
           "schema": "plan_steps",
-          "durationMs": 76,
+          "durationMs": 303,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-1",
@@ -668,7 +669,7 @@
         {
           "caseId": "mock-mislabeled-send",
           "schema": "extract_constraints",
-          "durationMs": 75,
+          "durationMs": 253,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-2",
@@ -678,12 +679,12 @@
     },
     {
       "id": "mock-duplicate-step-ids",
-      "durationMs": 38,
+      "durationMs": 62,
       "origin": "loopback-model-response",
       "plan": {
         "steps": [
           {
-            "id": "same-id",
+            "id": "1-same-id",
             "name": "Review search",
             "kind": "reversible",
             "status": "pending",
@@ -691,7 +692,7 @@
             "tool": "search"
           },
           {
-            "id": "same-id",
+            "id": "2-same-id",
             "name": "Review draft",
             "kind": "reversible",
             "status": "pending",
@@ -699,7 +700,7 @@
             "tool": "draft"
           },
           {
-            "id": "same-id",
+            "id": "3-same-id",
             "name": "Review mail.send",
             "kind": "commit",
             "status": "pending",
@@ -713,7 +714,7 @@
         {
           "caseId": "mock-duplicate-step-ids",
           "schema": "plan_steps",
-          "durationMs": 28,
+          "durationMs": 40,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-3",
@@ -722,7 +723,7 @@
         {
           "caseId": "mock-duplicate-step-ids",
           "schema": "extract_constraints",
-          "durationMs": 19,
+          "durationMs": 25,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-4",
@@ -739,58 +740,56 @@
         ],
         "steps": [
           {
-            "id": "same-id",
+            "id": "1-same-id",
             "name": "Review search",
             "kind": "reversible",
             "status": "done",
             "classifiedBy": "model",
             "tool": "search",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "output": "INC-4471: webhook delivery down Sept 11 14:05-17:10 UTC. Root cause: expired TLS cert on the webhook egress proxy in us-east-2. Cert rotated 17:10 UTC; 18,240 events replayed by 18:30 UTC."
           },
           {
-            "id": "same-id",
+            "id": "2-same-id",
             "name": "Review draft",
             "kind": "reversible",
             "status": "done",
             "classifiedBy": "model",
             "tool": "draft",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "output": "Hi Dana,\n\nWebhook delivery to Northwind Logistics was down on Sept 11 from 14:05 to 17:10 UTC (INC-4471). The cause was an expired TLS certificate on our webhook egress proxy. The certificate was rotated at 17:10 UTC and all 18,240 delayed shipment status events were replayed by 18:30 UTC.\n\nWe are adding certificate expiry alerting so this cannot recur silently, and we will share the postmortem once it is final.\n\nReference: WO-review-duplicate"
           },
           {
-            "id": "same-id",
+            "id": "3-same-id",
             "name": "Review mail.send",
             "kind": "commit",
-            "status": "done",
+            "status": "waiting_human",
             "classifiedBy": "allowlist_override",
-            "tool": "mail.send",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "tool": "mail.send"
           }
         ],
-        "commits": []
+        "commits": [
+          {
+            "idempotencyKey": "WO-review-duplicate:3-same-id:mail.send:924d86ff7c04a0b80150973636e0edcc443cdac700ea9d287b01192247e3bd61",
+            "tool": "mail.send",
+            "args": {
+              "to": "dana.okafor@northwind.example",
+              "subject": "Update on today's outage (WO-review-duplicate)",
+              "body": "Hi Dana,\n\nWebhook delivery to Northwind Logistics was down on Sept 11 from 14:05 to 17:10 UTC (INC-4471). The cause was an expired TLS certificate on our webhook egress proxy. The certificate was rotated at 17:10 UTC and all 18,240 delayed shipment status events were replayed by 18:30 UTC.\n\nWe are adding certificate expiry alerting so this cannot recur silently, and we will share the postmortem once it is final.\n\nReference: WO-review-duplicate"
+            },
+            "status": "proposed"
+          }
+        ]
       }
     },
     {
       "id": "mock-tool-outside-enum",
-      "durationMs": 168,
-      "origin": "loopback-model-response",
-      "plan": {
-        "steps": [
-          {
-            "id": "1-unknown",
-            "name": "Review mail_send",
-            "kind": "reversible",
-            "status": "pending",
-            "classifiedBy": "model",
-            "tool": "mail_send"
-          }
-        ],
-        "constraints": []
-      },
+      "durationMs": 38,
+      "origin": "rejected",
+      "error": "Planner response is invalid: steps[0].tool is not supported. No plan was created.",
       "requests": [
         {
           "caseId": "mock-tool-outside-enum",
           "schema": "plan_steps",
-          "durationMs": 63,
+          "durationMs": 24,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-5",
@@ -799,57 +798,24 @@
         {
           "caseId": "mock-tool-outside-enum",
           "schema": "extract_constraints",
-          "durationMs": 32,
+          "durationMs": 27,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-6",
           "model": "review-loopback"
         }
-      ],
-      "workOrder": {
-        "id": "WO-review-unknown",
-        "scenario": "review",
-        "threadRef": "review-unknown",
-        "constraints": [],
-        "approvers": [
-          "U_REVIEW_OWNER"
-        ],
-        "steps": [
-          {
-            "id": "1-unknown",
-            "name": "Review mail_send",
-            "kind": "reversible",
-            "status": "done",
-            "classifiedBy": "model",
-            "tool": "mail_send",
-            "output": "No stub for tool \"mail_send\"; step recorded."
-          }
-        ],
-        "commits": []
-      }
+      ]
     },
     {
       "id": "mock-string-constraints",
-      "durationMs": 16,
-      "origin": "loopback-model-response",
-      "plan": {
-        "steps": [
-          {
-            "id": "1-search",
-            "name": "Review search",
-            "kind": "reversible",
-            "status": "pending",
-            "classifiedBy": "model",
-            "tool": "search"
-          }
-        ],
-        "constraints": "Never send"
-      },
+      "durationMs": 66,
+      "origin": "rejected",
+      "error": "Planner response is invalid: constraints must be an array of non-empty strings. No plan was created.",
       "requests": [
         {
           "caseId": "mock-string-constraints",
           "schema": "plan_steps",
-          "durationMs": 13,
+          "durationMs": 44,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-7",
@@ -858,7 +824,7 @@
         {
           "caseId": "mock-string-constraints",
           "schema": "extract_constraints",
-          "durationMs": 13,
+          "durationMs": 50,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-8",
@@ -868,17 +834,14 @@
     },
     {
       "id": "mock-empty-plan",
-      "durationMs": 22,
-      "origin": "loopback-model-response",
-      "plan": {
-        "steps": [],
-        "constraints": []
-      },
+      "durationMs": 42,
+      "origin": "rejected",
+      "error": "Planner response is invalid: steps must be a non-empty array. No plan was created.",
       "requests": [
         {
           "caseId": "mock-empty-plan",
           "schema": "plan_steps",
-          "durationMs": 9,
+          "durationMs": 26,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-9",
@@ -887,7 +850,7 @@
         {
           "caseId": "mock-empty-plan",
           "schema": "extract_constraints",
-          "durationMs": 16,
+          "durationMs": 30,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-10",
@@ -897,69 +860,14 @@
     },
     {
       "id": "mock-malformed-provider",
-      "durationMs": 15,
-      "origin": "fallback-fixture",
-      "plan": {
-        "steps": [
-          {
-            "id": "1-search-incident-timeline",
-            "name": "Search incident timeline for INC-4471",
-            "kind": "reversible",
-            "status": "pending",
-            "classifiedBy": "model",
-            "tool": "search"
-          },
-          {
-            "id": "2-search-account-context",
-            "name": "Search Northwind Logistics account context",
-            "kind": "reversible",
-            "status": "pending",
-            "classifiedBy": "model",
-            "tool": "search"
-          },
-          {
-            "id": "3-draft-customer-update",
-            "name": "Draft customer update email to Dana Okafor",
-            "kind": "reversible",
-            "status": "pending",
-            "classifiedBy": "model",
-            "tool": "draft"
-          },
-          {
-            "id": "4-create-follow-up-tasks",
-            "name": "Create follow-up tasks (postmortem share, SLA review)",
-            "kind": "reversible",
-            "status": "pending",
-            "classifiedBy": "model",
-            "tool": "write_to_work_order"
-          },
-          {
-            "id": "5-send-customer-update",
-            "name": "Send customer update to dana.okafor@northwind.example",
-            "kind": "commit",
-            "status": "pending",
-            "classifiedBy": "allowlist_override",
-            "tool": "mail.send"
-          },
-          {
-            "id": "6-update-crm-account",
-            "name": "Log outage update on Northwind CRM account",
-            "kind": "commit",
-            "status": "pending",
-            "classifiedBy": "allowlist_override",
-            "tool": "crm.update"
-          }
-        ],
-        "constraints": [
-          "Do not promise a credit",
-          "Customer update must go out by 17:00 PT today"
-        ]
-      },
+      "durationMs": 93,
+      "origin": "rejected",
+      "error": "Planner request failed. No plan was created; retry when the model is available.",
       "requests": [
         {
           "caseId": "mock-malformed-provider",
           "schema": "plan_steps",
-          "durationMs": 5,
+          "durationMs": 24,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-11",
@@ -968,7 +876,7 @@
         {
           "caseId": "mock-malformed-provider",
           "schema": "extract_constraints",
-          "durationMs": 6,
+          "durationMs": 60,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-12",
@@ -977,10 +885,19 @@
         {
           "caseId": "mock-malformed-provider",
           "schema": "plan_steps",
-          "durationMs": 6,
+          "durationMs": 45,
           "httpStatus": 200,
           "requestId": null,
           "generationId": "review-13",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-malformed-provider",
+          "schema": "extract_constraints",
+          "durationMs": 47,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-14",
           "model": "review-loopback"
         }
       ]
@@ -1102,10 +1019,10 @@
       "name": "untrusted approver cannot approve modeled commit",
       "status": "pass",
       "evidence": {
-        "idempotencyKey": "WO-review-override:1-send:mail.send:e7c2648af96fef4d50414bf1aec72991ec73edd55aa692ec6d4690dc7addcb4c",
+        "idempotencyKey": "WO-review-override:1-send:mail.send:f5cabd27484f9feb49348e1a596038db441886cd888d45506f5bd1aea426c3cf",
         "tool": "mail.send",
         "args": {
-          "to": "dana@northwind.example",
+          "to": "dana.okafor@northwind.example",
           "subject": "Update on today's outage (WO-review-override)",
           "body": "(no draft recorded)"
         },
@@ -1118,8 +1035,8 @@
       "evidence": 0
     },
     {
-      "name": "duplicate IDs are rejected before execution",
-      "status": "fail",
+      "name": "duplicate model IDs become unique before execution",
+      "status": "pass",
       "evidence": {
         "id": "WO-review-duplicate",
         "scenario": "review",
@@ -1130,195 +1047,253 @@
         ],
         "steps": [
           {
-            "id": "same-id",
+            "id": "1-same-id",
             "name": "Review search",
             "kind": "reversible",
             "status": "done",
             "classifiedBy": "model",
             "tool": "search",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "output": "INC-4471: webhook delivery down Sept 11 14:05-17:10 UTC. Root cause: expired TLS cert on the webhook egress proxy in us-east-2. Cert rotated 17:10 UTC; 18,240 events replayed by 18:30 UTC."
           },
           {
-            "id": "same-id",
+            "id": "2-same-id",
             "name": "Review draft",
             "kind": "reversible",
             "status": "done",
             "classifiedBy": "model",
             "tool": "draft",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "output": "Hi Dana,\n\nWebhook delivery to Northwind Logistics was down on Sept 11 from 14:05 to 17:10 UTC (INC-4471). The cause was an expired TLS certificate on our webhook egress proxy. The certificate was rotated at 17:10 UTC and all 18,240 delayed shipment status events were replayed by 18:30 UTC.\n\nWe are adding certificate expiry alerting so this cannot recur silently, and we will share the postmortem once it is final.\n\nReference: WO-review-duplicate"
           },
           {
-            "id": "same-id",
+            "id": "3-same-id",
             "name": "Review mail.send",
             "kind": "commit",
-            "status": "done",
+            "status": "waiting_human",
             "classifiedBy": "allowlist_override",
-            "tool": "mail.send",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "tool": "mail.send"
           }
         ],
-        "commits": []
+        "commits": [
+          {
+            "idempotencyKey": "WO-review-duplicate:3-same-id:mail.send:924d86ff7c04a0b80150973636e0edcc443cdac700ea9d287b01192247e3bd61",
+            "tool": "mail.send",
+            "args": {
+              "to": "dana.okafor@northwind.example",
+              "subject": "Update on today's outage (WO-review-duplicate)",
+              "body": "Hi Dana,\n\nWebhook delivery to Northwind Logistics was down on Sept 11 from 14:05 to 17:10 UTC (INC-4471). The cause was an expired TLS certificate on our webhook egress proxy. The certificate was rotated at 17:10 UTC and all 18,240 delayed shipment status events were replayed by 18:30 UTC.\n\nWe are adding certificate expiry alerting so this cannot recur silently, and we will share the postmortem once it is final.\n\nReference: WO-review-duplicate"
+            },
+            "status": "proposed"
+          }
+        ]
       }
     },
     {
       "name": "mail step cannot be marked done by a search step",
-      "status": "fail",
+      "status": "pass",
       "evidence": {
         "steps": [
           {
-            "id": "same-id",
+            "id": "1-same-id",
             "name": "Review search",
             "kind": "reversible",
             "status": "done",
             "classifiedBy": "model",
             "tool": "search",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "output": "INC-4471: webhook delivery down Sept 11 14:05-17:10 UTC. Root cause: expired TLS cert on the webhook egress proxy in us-east-2. Cert rotated 17:10 UTC; 18,240 events replayed by 18:30 UTC."
           },
           {
-            "id": "same-id",
+            "id": "2-same-id",
             "name": "Review draft",
             "kind": "reversible",
             "status": "done",
             "classifiedBy": "model",
             "tool": "draft",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "output": "Hi Dana,\n\nWebhook delivery to Northwind Logistics was down on Sept 11 from 14:05 to 17:10 UTC (INC-4471). The cause was an expired TLS certificate on our webhook egress proxy. The certificate was rotated at 17:10 UTC and all 18,240 delayed shipment status events were replayed by 18:30 UTC.\n\nWe are adding certificate expiry alerting so this cannot recur silently, and we will share the postmortem once it is final.\n\nReference: WO-review-duplicate"
           },
           {
-            "id": "same-id",
+            "id": "3-same-id",
             "name": "Review mail.send",
             "kind": "commit",
-            "status": "done",
+            "status": "waiting_human",
             "classifiedBy": "allowlist_override",
-            "tool": "mail.send",
-            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+            "tool": "mail.send"
           }
         ],
-        "ledgerEntries": 0
+        "ledgerEntries": 1
       }
     },
     {
       "name": "tool enum is locally validated",
-      "status": "fail",
-      "evidence": [
-        {
-          "id": "1-unknown",
-          "name": "Review mail_send",
-          "kind": "reversible",
-          "status": "done",
-          "classifiedBy": "model",
-          "tool": "mail_send",
-          "output": "No stub for tool \"mail_send\"; step recorded."
-        }
-      ]
+      "status": "pass",
+      "evidence": {
+        "id": "mock-tool-outside-enum",
+        "durationMs": 38,
+        "origin": "rejected",
+        "error": "Planner response is invalid: steps[0].tool is not supported. No plan was created.",
+        "requests": [
+          {
+            "caseId": "mock-tool-outside-enum",
+            "schema": "plan_steps",
+            "durationMs": 24,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-5",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-tool-outside-enum",
+            "schema": "extract_constraints",
+            "durationMs": 27,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-6",
+            "model": "review-loopback"
+          }
+        ]
+      }
     },
     {
-      "name": "unsupported tool does not report done",
-      "status": "fail",
+      "name": "unsupported tool cannot become an executable work order",
+      "status": "pass",
       "evidence": {
-        "id": "1-unknown",
-        "name": "Review mail_send",
-        "kind": "reversible",
-        "status": "done",
-        "classifiedBy": "model",
-        "tool": "mail_send",
-        "output": "No stub for tool \"mail_send\"; step recorded."
+        "id": "mock-tool-outside-enum",
+        "durationMs": 38,
+        "origin": "rejected",
+        "error": "Planner response is invalid: steps[0].tool is not supported. No plan was created.",
+        "requests": [
+          {
+            "caseId": "mock-tool-outside-enum",
+            "schema": "plan_steps",
+            "durationMs": 24,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-5",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-tool-outside-enum",
+            "schema": "extract_constraints",
+            "durationMs": 27,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-6",
+            "model": "review-loopback"
+          }
+        ]
       }
     },
     {
       "name": "constraints array is locally validated",
-      "status": "fail",
+      "status": "pass",
       "evidence": {
-        "planner": "Never send",
-        "persisted": [
-          "N",
-          "e",
-          "v",
-          "e",
-          "r",
-          " ",
-          "s",
-          "e",
-          "n",
-          "d"
+        "id": "mock-string-constraints",
+        "durationMs": 66,
+        "origin": "rejected",
+        "error": "Planner response is invalid: constraints must be an array of non-empty strings. No plan was created.",
+        "requests": [
+          {
+            "caseId": "mock-string-constraints",
+            "schema": "plan_steps",
+            "durationMs": 44,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-7",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-string-constraints",
+            "schema": "extract_constraints",
+            "durationMs": 50,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-8",
+            "model": "review-loopback"
+          }
         ]
       }
     },
     {
       "name": "actionable request cannot silently finish with zero steps",
-      "status": "fail",
+      "status": "pass",
       "evidence": {
-        "steps": [],
-        "constraints": []
+        "id": "mock-empty-plan",
+        "durationMs": 42,
+        "origin": "rejected",
+        "error": "Planner response is invalid: steps must be a non-empty array. No plan was created.",
+        "requests": [
+          {
+            "caseId": "mock-empty-plan",
+            "schema": "plan_steps",
+            "durationMs": 26,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-9",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-empty-plan",
+            "schema": "extract_constraints",
+            "durationMs": 30,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-10",
+            "model": "review-loopback"
+          }
+        ]
       }
     },
     {
       "name": "malformed model response cannot substitute another customer's plan",
-      "status": "fail",
+      "status": "pass",
       "evidence": {
-        "origin": "fallback-fixture",
-        "requests": 3,
-        "plan": {
-          "steps": [
-            {
-              "id": "1-search-incident-timeline",
-              "name": "Search incident timeline for INC-4471",
-              "kind": "reversible",
-              "status": "pending",
-              "classifiedBy": "model",
-              "tool": "search"
-            },
-            {
-              "id": "2-search-account-context",
-              "name": "Search Northwind Logistics account context",
-              "kind": "reversible",
-              "status": "pending",
-              "classifiedBy": "model",
-              "tool": "search"
-            },
-            {
-              "id": "3-draft-customer-update",
-              "name": "Draft customer update email to Dana Okafor",
-              "kind": "reversible",
-              "status": "pending",
-              "classifiedBy": "model",
-              "tool": "draft"
-            },
-            {
-              "id": "4-create-follow-up-tasks",
-              "name": "Create follow-up tasks (postmortem share, SLA review)",
-              "kind": "reversible",
-              "status": "pending",
-              "classifiedBy": "model",
-              "tool": "write_to_work_order"
-            },
-            {
-              "id": "5-send-customer-update",
-              "name": "Send customer update to dana.okafor@northwind.example",
-              "kind": "commit",
-              "status": "pending",
-              "classifiedBy": "allowlist_override",
-              "tool": "mail.send"
-            },
-            {
-              "id": "6-update-crm-account",
-              "name": "Log outage update on Northwind CRM account",
-              "kind": "commit",
-              "status": "pending",
-              "classifiedBy": "allowlist_override",
-              "tool": "crm.update"
-            }
-          ],
-          "constraints": [
-            "Do not promise a credit",
-            "Customer update must go out by 17:00 PT today"
-          ]
-        }
+        "id": "mock-malformed-provider",
+        "durationMs": 93,
+        "origin": "rejected",
+        "error": "Planner request failed. No plan was created; retry when the model is available.",
+        "requests": [
+          {
+            "caseId": "mock-malformed-provider",
+            "schema": "plan_steps",
+            "durationMs": 24,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-11",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-malformed-provider",
+            "schema": "extract_constraints",
+            "durationMs": 60,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-12",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-malformed-provider",
+            "schema": "plan_steps",
+            "durationMs": 45,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-13",
+            "model": "review-loopback"
+          },
+          {
+            "caseId": "mock-malformed-provider",
+            "schema": "extract_constraints",
+            "durationMs": 47,
+            "httpStatus": 200,
+            "requestId": null,
+            "generationId": "review-14",
+            "model": "review-loopback"
+          }
+        ]
       }
     }
   ],
   "summary": {
     "total": 19,
-    "passed": 3,
-    "failed": 16
+    "passed": 10,
+    "failed": 9
   }
 }

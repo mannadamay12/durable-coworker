@@ -349,3 +349,16 @@ Rules out: applying earlier passing results to later edits, treating imported re
 JSON as tested engine state, or calling a characterization suite a correctness gate
 without updating its expectations. This is a verification policy; it introduces no
 application behavior or new runtime architecture.
+
+## D35. Model failure and document projection must be visible and non-blocking
+
+The planner uses the deterministic Northwind fixture only when `PLANNER_MODE=stub` is
+explicit. A missing key, malformed response, unsupported tool or invalid constraint
+rejects the new work order instead of silently changing the customer's job. Local
+Markdown mirroring is written independently of best-effort remote document projection;
+timer reads and projection errors cannot fail the Trigger task or hold approval.
+
+Rules out: another customer's fixture being presented as a model result, a cosmetic
+document outage terminating business work, or a remote projection timeout delaying the
+human decision. The remote projection still needs a durable delivery record before it
+can claim cross-process reliability.

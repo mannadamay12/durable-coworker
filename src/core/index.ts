@@ -292,16 +292,23 @@ export function deny(woId: string, stepId: string, actor: string): WorkOrder {
   );
 }
 
-function markCommitted(woId: string, stepId: string, key: string, externalId: string): void {
-  withDb((db) =>
+function markCommitted(woId: string, stepId: string, key: string, externalId: string): { entry: LedgerEntry; recorded: boolean } {
+  return withDb((db) =>
     tx(db, () => {
-      db.prepare(
+      const written = db.prepare(
         "UPDATE ledger SET status = 'committed', external_id = ?, committed_at = ? WHERE idempotency_key = ? AND status != 'committed'",
       ).run(externalId, now(), key);
+      // A different attempt may already have committed. Its receipt is terminal,
+      // including in this caller's response; a late provider result cannot replace it.
+      const row = db.prepare("SELECT * FROM ledger WHERE idempotency_key = ?").get(key) as Row | undefined;
+      if (!row) throw new Error(`ledger entry ${key} disappeared while committing`);
+      const entry = toEntry(row);
       const wo = readWorkOrder(db, woId);
-      if (!wo) return;
-      wo.steps = wo.steps.map((s) => (s.id === stepId ? { ...s, status: "committed" } : s));
-      writeWorkOrder(db, wo);
+      if (wo) {
+        wo.steps = wo.steps.map((s) => (s.id === stepId ? { ...s, status: "committed" } : s));
+        writeWorkOrder(db, wo);
+      }
+      return { entry, recorded: Number(written.changes) === 1 };
     }),
   );
 }
@@ -345,10 +352,9 @@ export async function commit(woId: string, stepId: string, actor: string): Promi
   // Reconcile before acting: the side effect may have landed before the ledger write did.
   const landed = reconcile(key);
   if (landed) {
-    const externalId = landed.id;
-    markCommitted(woId, stepId, key, externalId);
-    log(`${woId} RECONCILED ${stepId}: found ${externalId} in outbox by idempotency key, nothing sent`);
-    return { reused: true, status: "committed", externalId, idempotencyKey: key };
+    const { entry: current } = markCommitted(woId, stepId, key, landed.id);
+    log(`${woId} RECONCILED ${stepId}: returning stored receipt ${current.externalId}, nothing sent`);
+    return { reused: true, status: current.status, externalId: current.externalId, idempotencyKey: key };
   }
 
   if (!claimed) {
@@ -370,15 +376,27 @@ export async function commit(woId: string, stepId: string, actor: string): Promi
     log(`${woId} ${stepId} tool threw: ${(err as Error).message}`);
   }
   if (!externalId) {
-    withDb((db) =>
-      db.prepare("UPDATE ledger SET status = 'outcome_unknown' WHERE idempotency_key = ? AND status != 'committed'").run(key),
+    const current = withDb((db) =>
+      tx(db, () => {
+        db.prepare("UPDATE ledger SET status = 'outcome_unknown' WHERE idempotency_key = ? AND status != 'committed'").run(key);
+        const row = db.prepare("SELECT * FROM ledger WHERE idempotency_key = ?").get(key) as Row | undefined;
+        if (!row) throw new Error(`ledger entry ${key} disappeared after the tool returned`);
+        return toEntry(row);
+      }),
     );
+    if (current.status === "committed") {
+      log(`${woId} ${stepId} late attempt returned no id; returning stored receipt ${current.externalId}`);
+      return { reused: false, status: current.status, externalId: current.externalId, idempotencyKey: key };
+    }
     log(`${woId} ${stepId} OUTCOME UNKNOWN: no id returned; reconcile before retrying`);
-    return { reused: false, status: "outcome_unknown", idempotencyKey: key };
+    return { reused: false, status: current.status, idempotencyKey: key };
   }
-  markCommitted(woId, stepId, key, externalId);
-  log(`${woId} COMMITTED ${stepId}: externalId ${externalId}`);
-  return { reused: false, status: "committed", externalId, idempotencyKey: key };
+  const { entry: current, recorded } = markCommitted(woId, stepId, key, externalId);
+  log(recorded
+    ? `${woId} COMMITTED ${stepId}: externalId ${current.externalId}`
+    : `${woId} ${stepId} late tool result; returning already stored receipt ${current.externalId}`);
+  // This caller invoked the tool, even when another attempt supplied the stored receipt.
+  return { reused: false, status: current.status, externalId: current.externalId, idempotencyKey: key };
 }
 
 /** Tool registry. Commit tools live here and are never handed to a model. */
