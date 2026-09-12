@@ -129,3 +129,79 @@ Rules out: building any push notification system.
 
 It reads as prize farming and discounts everything around it. Sponsor fit stays in
 working notes.
+
+## D17. The runId is a hash of `thread.conversationKey`, not the Slack `thread_ts`
+
+CopilotKit Channels does not expose Slack's `thread_ts`. `ReplyTarget` is declared
+`unknown` ("opaque to the channel core"), the Slack adapter resolves
+`{channel, threadTs}` internally without forwarding it, and the docs explicitly say not
+to parse `conversationKey` for workspace, channel or thread ids.
+
+`conversationKey` is documented as the stable per-conversation key and is what the SDK
+itself uses to map a conversation to a durable agent thread across restarts. So the
+runId is `sha256(conversationKey).slice(0, 12)`: same thread gives the same runId after
+a restart, and unlike the raw key it is filesystem-safe.
+
+Rules out: any design that needs the real Slack channel or thread id, including posting
+to a thread we were not handed a `Thread` handle for.
+
+## D18. Never use Trigger.dev `idempotencyKey` for resume
+
+`tasks.trigger()` has no run-id option — the full option set is `idempotencyKey`,
+`idempotencyKeyTTL`, `maxAttempts`, `queue`, `concurrencyKey`, `delay`, `ttl`,
+`priority`, `tags`, `metadata`, `maxDuration`, `machine`, `version`,
+`externalDeploymentId`, `region`, `debounce`.
+
+`idempotencyKey` looks like the resume primitive and is a trap. Re-triggering with the
+same key returns the *original* run's handle rather than starting a run. Failed runs
+clear their key, but **canceled ones keep it** — and killing the dev CLI gets the run
+`CANCELED` by Trigger.dev's watchdog within about a second. So a second trigger would
+hand back a dead run and silently execute nothing: the demo would appear to do nothing
+on the resume beat.
+
+The logical runId therefore travels in the payload, the run is tagged `smoke:<runId>`
+for lookup, and every resume is a fresh Trigger.dev run. This is D4 restated with the
+mechanism pinned down. Also `ttl: 0` on every trigger: dev runs default to a 10-minute
+TTL, so a resume queued more than ten minutes after the kill would expire unexecuted.
+
+## D19. The listener posts the closing card, not the task
+
+The Trigger.dev task has no Slack connection, and `Thread` is a live handle that cannot
+be serialized across a process boundary. So the listener subscribes to the run it
+triggered (`runs.subscribeToRun`) and posts the finished/interrupted card itself.
+
+This also makes the interrupted card possible at all: the only process that can report
+"the worker died" is the one that did not die. It reinforces invariant 6 rather than
+working around it.
+
+Rules out: an HTTP callback from the worker into the listener, and any design where the
+job needs Slack credentials.
+
+## D20. `npm run kill` leaves Trigger.dev's watchdog alive
+
+Trigger.dev spawns a detached watchdog that polls the dev CLI's pid and cancels
+in-flight runs when it dies, specifically to survive `SIGKILL`. Killing it too would
+drop recovery onto the 30-second heartbeat with a 5-minute timeout, which is unfilmable.
+So the kill script excludes it and we get `CANCELED` in about a second instead.
+
+`devWatchdog.js` sits under `.../dist/esm/dev/`, so any matcher keyed on a bare `dev`
+path segment kills it by accident. That specific case is pinned in
+`scripts/kill-worker.test.mjs` along with the listener exclusion. The kill is also
+scoped to the current project root so a dev worker for another repo on the same machine
+survives.
+
+## D21. The mention handler awaits the run watch
+
+Refines D19. In managed Channels a `Thread` is only writable while its delivery is open,
+and the delivery seals the moment the handler returns: any later `thread.post` rejects
+with `ChannelDeliveryOperationsClosedError`. There is no public API to post to a thread
+outside a delivery (the `Channel` interface says channels are runtime-driven only). So
+the handler stays inside `runs.subscribeToRun` until the run is terminal, and posts the
+closing card before returning.
+
+Cost: one delivery slot held per running job. The transport allows 8 concurrent
+deliveries by default and store concurrency defaults to `parallel`, which is fine for a
+demo with one job at a time.
+
+Rules out: fire-and-forget watchers, and any job that runs longer than we are willing to
+hold a delivery open (a long human approval wait will need a different posting path).
