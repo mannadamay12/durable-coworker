@@ -18,7 +18,7 @@ const workOrder = (id = "WO-REVIEW-MIRROR") => ({ id, scenario: "review", thread
   constraints: ["Do not offer a refund"], approvers: ["U_REVIEW"],
   steps: [{ id: "1-draft", name: "Draft response", kind: "reversible", tool: "draft", status: "done", classifiedBy: "model", output: "UNIQUE_DRAFT_EVIDENCE" },
     { id: "2-send", name: "Send response", kind: "commit", tool: "mail.send", status: "waiting_human", classifiedBy: "allowlist_override" }],
-  commits: [{ idempotencyKey: `${id}:2-send:mail.send:hash`, tool: "mail.send", args: { to: "review@example.invalid", body: "UNIQUE_APPROVED_PAYLOAD" }, status: "proposed" }],
+  commits: [{ idempotencyKey: `${id}:2-send:mail.send:hash`, tool: "mail.send", args: { to: "review@example.invalid", subject: "Unique review proposal", body: "UNIQUE_APPROVED_PAYLOAD" }, status: "proposed" }],
 });
 const originalFetch = globalThis.fetch;
 let behavior = "normal";
@@ -52,7 +52,7 @@ let server;
 try {
   const rendered = renderWorkOrder(workOrder());
   check("mirror renders durable draft evidence", rendered.includes("UNIQUE_DRAFT_EVIDENCE"), { draftPresent: rendered.includes("UNIQUE_DRAFT_EVIDENCE") });
-  check("mirror renders exact proposed recipient and payload", rendered.includes("review@example.invalid") && rendered.includes("UNIQUE_APPROVED_PAYLOAD"), { proposedArgsPresent: rendered.includes("UNIQUE_APPROVED_PAYLOAD") });
+  check("mirror renders exact proposed recipient, subject and status", rendered.includes("review@example.invalid") && rendered.includes("Unique review proposal") && rendered.includes("(PROPOSED)"), { proposedArgsPresent: rendered.includes("review@example.invalid") && rendered.includes("Unique review proposal") && rendered.includes("(PROPOSED)") });
 
   const start = calls.length;
   await Promise.all([mirror(workOrder()), mirror(workOrder())]);

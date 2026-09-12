@@ -350,7 +350,20 @@ JSON as tested engine state, or calling a characterization suite a correctness g
 without updating its expectations. This is a verification policy; it introduces no
 application behavior or new runtime architecture.
 
-## D35. A dataset thread id in `WorkOrder.scenario` is the grounding key
+## D35. Model failure and document projection must be visible and non-blocking
+
+The planner uses the deterministic Northwind fixture only when `PLANNER_MODE=stub` is
+explicit. A missing key, malformed response, unsupported tool or invalid constraint
+rejects the new work order instead of silently changing the customer's job. Local
+Markdown mirroring is written independently of best-effort remote document projection;
+timer reads and projection errors cannot fail the Trigger task or hold approval.
+
+Rules out: another customer's fixture being presented as a model result, a cosmetic
+document outage terminating business work, or a remote projection timeout delaying the
+human decision. The remote projection still needs a durable delivery record before it
+can claim cross-process reliability.
+
+## D36. A dataset thread id in `WorkOrder.scenario` is the grounding key
 
 `contract.ts` stays frozen. When `scenario` names a thread in `datasets/threads.json`,
 research, draft, tasks, constraints and the frozen proposal all come from that thread and
@@ -360,7 +373,7 @@ Northwind stub unchanged, so the kill test and listener behave as before.
 Rules out: a new customer field on the work order, and the executor inventing content
 for a dataset thread.
 
-## D36. No cross-customer fallback; ungroundable commits fail before proposal
+## D37. No cross-customer fallback; ungroundable commits fail before proposal
 
 If a dataset thread has no source draft, its recipient is not a contact of its customer,
 or its commit tool is not in `COMMIT_TOOLS`, the commit step is marked `failed` and no
@@ -371,7 +384,7 @@ built only from the thread and customer fields.
 
 Rules out: substituting another customer's draft or recipient to reach an approval card.
 
-## D37. Recovery beats are built by driving the engine, not by loading fixture rows
+## D38. Recovery beats are built by driving the engine, not by loading fixture rows
 
 `buildRecovery(beat)` uses only the thread id, work order id and approvers from
 `work_order_fixtures.json`, then runs the real `runReversible` / `approve` / `commit` /
@@ -381,7 +394,7 @@ test does). The fixtures' hand-written ledger keys and statuses are ignored.
 Rules out: ledger keys that do not match `idempotencyKey()`, such as the imported
 `WO-1842-KILL` row keyed `WO-1842:...:sha256:acme-dana-v1`.
 
-## D38. Second assertion script: `src/core/scenarios.test.ts`
+## D39. Second assertion script: `src/core/scenarios.test.ts`
 
 This relaxes the single assertion script rule for one script. It is the acceptance gate
 for dataset grounding and the README "assertions the tests should lock". It uses the kill

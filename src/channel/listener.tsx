@@ -105,6 +105,8 @@ function ApprovalCard(props: StepRef) {
       : JSON.stringify(args, null, 2);
   const ref: StepRef = { woId: props.woId, stepId: props.stepId };
   const unknown = entry?.status === "outcome_unknown";
+  const attempted = unknown || Boolean(entry?.attemptedAt);
+  const canDeny = !attempted && (entry?.status === "proposed" || entry?.status === "approved");
   return (
     <Message accent={ACCENT.wait}>
       <Header>{unknown ? `Outcome unknown: ${step?.name ?? props.stepId}` : `Awaiting approval: ${step?.name ?? props.stepId}`}</Header>
@@ -122,13 +124,14 @@ function ApprovalCard(props: StepRef) {
           ? `Constraints: ${wo.constraints.map((c) => `[ ${c} ]`).join("  ")}`
           : "No constraints extracted"}
       </Context>
+      {attempted ? <Context>An attempt may already have applied this action. Retry checks for a receipt first and may send again after the retry window.</Context> : null}
       <Actions>
         <Button style="primary" value={ref} onClick={(ctx) => onApprove(ctx.thread, ctx.actor.id, ctx.action.value ?? ref)}>
-          Approve
+          {attempted ? "Reconcile / retry" : "Approve"}
         </Button>
-        <Button style="danger" value={ref} onClick={(ctx) => onDeny(ctx.thread, ctx.actor.id, ctx.action.value ?? ref)}>
+        {canDeny ? <Button style="danger" value={ref} onClick={(ctx) => onDeny(ctx.thread, ctx.actor.id, ctx.action.value ?? ref)}>
           Deny
-        </Button>
+        </Button> : null}
       </Actions>
     </Message>
   );
@@ -142,17 +145,29 @@ function receipts(woId: string): string {
 const notice = (thread: Thread, accent: string, title: string, body: string, note: string) =>
   thread.post(<NoticeCard accent={accent} title={title} body={body} note={note} />);
 
-async function errorCard(thread: Thread, err: unknown): Promise<void> {
+async function errorCard(thread: Thread, err: unknown, woId?: string): Promise<void> {
   const message = err instanceof Error ? err.message : String(err);
   log(`ERROR ${message}`);
-  await notice(thread, ACCENT.stop, "Something went wrong", `\`${message}\``, "Nothing was sent. The listener is still up.");
+  let note = "The outcome could not be verified. Check stored progress before retrying.";
+  if (woId) {
+    try {
+      note = `${receipts(woId)}. Recorded progress and receipts are kept; unconfirmed actions may have applied.`;
+    } catch {
+      // A failed state read must not turn a notification error into a false no-send claim.
+    }
+  }
+  await notice(thread, ACCENT.stop, "Something went wrong", `\`${message}\``, note);
 }
+
+// Coalesce active runs in this listener. Recovery after process death still uses a new
+// Trigger attempt; this is not a distributed execution lock or a permanent dedupe key.
+const activeJobs = new Map<string, Promise<void>>();
 
 /**
  * Trigger the job and wait for it here. D21: a Thread is writable only while this
  * delivery is open, so the result card must be posted before the handler returns.
  */
-async function runJob(thread: Thread, woId: string): Promise<void> {
+async function watchJob(thread: Thread, woId: string): Promise<string> {
   // No idempotencyKey (D18); ttl 0 so a resume queued after a long pause does not expire.
   const handle = await tasks.trigger<typeof workorderTask>("workorder", { woId }, { tags: [`wo:${woId}`], ttl: 0 });
   log(`trigger ${woId} -> ${handle.id}`);
@@ -179,9 +194,14 @@ async function runJob(thread: Thread, woId: string): Promise<void> {
   } finally {
     clearTimeout(queuedWarning);
   }
+  return status;
+}
+
+async function runJobOnce(thread: Thread, woId: string): Promise<void> {
+  const status = await watchJob(thread, woId);
   const wo = getWorkOrder(woId);
   mirrorSoon(wo);
-  log(`run ${handle.id} ${status}: ${wo.steps.map((s) => `${s.id}=${s.status}`).join(" ")}`);
+  log(`${woId} worker ${status}: ${wo.steps.map((s) => `${s.id}=${s.status}`).join(" ")}`);
 
   if (status !== "COMPLETED") {
     await thread.post(
@@ -211,9 +231,37 @@ async function runJob(thread: Thread, woId: string): Promise<void> {
   );
 }
 
+async function runJob(thread: Thread, woId: string): Promise<void> {
+  let job = activeJobs.get(woId);
+  if (!job) {
+    job = runJobOnce(thread, woId);
+    activeJobs.set(woId, job);
+  }
+  try {
+    await job;
+  } finally {
+    if (activeJobs.get(woId) === job) activeJobs.delete(woId);
+  }
+}
+
+async function continueAfterCommit(thread: Thread, woId: string): Promise<void> {
+  const wo = getWorkOrder(woId);
+  const pending = pendingApproval(wo);
+  if (pending) {
+    await thread.post(<ApprovalCard woId={woId} stepId={pending.step.id} />);
+    return;
+  }
+  const next = wo.steps.find((s) => s.status !== "done" && s.status !== "committed");
+  if (next && (next.status === "pending" || next.status === "running")) await runJob(thread, woId);
+}
+
 async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<void> {
   log(`approve click ${ref.woId}/${ref.stepId} by ${actor}`);
   try {
+    // Core permits receipt reads on committed keys. Advancing the workflow still
+    // requires an approver, including when an old button returns a reused receipt.
+    const before = getWorkOrder(ref.woId);
+    if (!before.approvers.includes(actor)) throw new NotAuthorizedError(actor, before.approvers);
     const result = await commit(ref.woId, ref.stepId, actor);
     mirrorSoon(getWorkOrder(ref.woId));
     if (result.reused) {
@@ -221,9 +269,10 @@ async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<v
         thread,
         ACCENT.ok,
         "Already committed",
-        `Same receipt \`${result.externalId}\`. Nothing sent again.`,
+        `Stored receipt \`${result.externalId}\`. This click reused the receipt.`,
         receipts(ref.woId),
       );
+      await continueAfterCommit(thread, ref.woId);
       return;
     }
     if (result.status === "outcome_unknown") {
@@ -247,7 +296,7 @@ async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<v
       `Approved by ${who(actor)}. Receipt \`${result.externalId}\``,
       receipts(ref.woId),
     );
-    await runJob(thread, ref.woId);
+    await continueAfterCommit(thread, ref.woId);
   } catch (err) {
     if (err instanceof NotAuthorizedError) {
       await notice(
@@ -260,10 +309,10 @@ async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<v
       return;
     }
     if (err instanceof NotApprovedError) {
-      await notice(thread, ACCENT.stop, "Not approvable", `\`${ref.stepId}\` was denied or has no proposal. Nothing was sent.`, ref.woId);
+      await notice(thread, ACCENT.stop, "Not approvable", `\`${ref.stepId}\` was denied or has no proposal. This click did not authorize a new action.`, ref.woId);
       return;
     }
-    await errorCard(thread, err);
+    await errorCard(thread, err, ref.woId);
   }
 }
 
@@ -276,7 +325,7 @@ async function onDeny(thread: Thread, actor: string, ref: StepRef): Promise<void
       ACCENT.stop,
       `Stopped by ${actor}`,
       `Stopped by ${who(actor)}. ${ref.woId} blocked at \`${ref.stepId}\`.`,
-      "Nothing will be sent for this work order.",
+      `${receipts(ref.woId)}. This action and remaining work are blocked; earlier receipts are kept.`,
     );
   } catch (err) {
     if (err instanceof NotAuthorizedError) {
@@ -289,7 +338,7 @@ async function onDeny(thread: Thread, actor: string, ref: StepRef): Promise<void
       );
       return;
     }
-    await errorCard(thread, err);
+    await errorCard(thread, err, ref.woId);
   }
 }
 
@@ -351,7 +400,7 @@ channel.onMention(async ({ thread, message }) => {
     );
     await runJob(thread, woId);
   } catch (err) {
-    await errorCard(thread, err);
+    await errorCard(thread, err, woId);
   }
 });
 

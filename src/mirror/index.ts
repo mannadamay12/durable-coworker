@@ -13,7 +13,8 @@ const FILE_PATH = resolve(STATE_DIR, "workorder.md");
 const DOC_MAP_PATH = resolve(STATE_DIR, "mirror-docs.json");
 
 const lastSent = new Map<string, string>();
-const pending = new Map<string, WorkOrder>();
+type Snapshot = { wo: WorkOrder; body: string };
+const pending = new Map<string, Snapshot>();
 const inflight = new Map<string, Promise<void>>();
 
 function log(message: string): void {
@@ -43,16 +44,16 @@ function readDocMap(): Record<string, string> {
   }
 }
 
-async function mirrorOnce(wo: WorkOrder): Promise<void> {
-  const body = renderWorkOrder(wo);
-
+function writeLocal(wo: WorkOrder, body: string): void {
   try {
     mkdirSync(STATE_DIR, { recursive: true });
     writeAtomic(FILE_PATH, `${body}\nLast mirrored: ${new Date().toISOString()}\n`);
   } catch (err) {
     log(`file write failed for ${wo.id} (${shortReason(err)})`);
   }
+}
 
+async function mirrorOnce({ wo, body }: Snapshot): Promise<void> {
   if (process.env.MIRROR_MODE === "file" || !ambiguousConfigured()) return;
   if (lastSent.get(wo.id) === body) return;
 
@@ -72,9 +73,9 @@ async function mirrorOnce(wo: WorkOrder): Promise<void> {
 // creating a duplicate doc. Newer states arriving meanwhile collapse into the latest one.
 async function drain(woId: string): Promise<void> {
   try {
-    for (let wo = pending.get(woId); wo; wo = pending.get(woId)) {
+    for (let snapshot = pending.get(woId); snapshot; snapshot = pending.get(woId)) {
       pending.delete(woId);
-      await mirrorOnce(wo);
+      await mirrorOnce(snapshot);
     }
   } finally {
     // Synchronous with the empty check above, so no caller can enqueue unseen.
@@ -84,7 +85,11 @@ async function drain(woId: string): Promise<void> {
 
 export async function mirror(wo: WorkOrder): Promise<void> {
   try {
-    pending.set(wo.id, wo);
+    const body = renderWorkOrder(wo);
+    // Local progress must not queue behind a remote request. A queued older remote
+    // snapshot never writes this file, so finishing it cannot regress the local view.
+    writeLocal(wo, body);
+    pending.set(wo.id, { wo, body });
     let run = inflight.get(wo.id);
     if (!run) {
       run = drain(wo.id);

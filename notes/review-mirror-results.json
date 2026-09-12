@@ -1,20 +1,20 @@
 {
-  "checkedAt": "2026-09-12T21:55:48.310Z",
-  "revision": "54afa04b117c8b21e94d3603196077ebe15e4270",
+  "checkedAt": "2026-09-12T22:40:26.029Z",
+  "revision": "0f5a83a9b9a798ee18cf8461f76284be13389420",
   "mode": "offline-mocked-transport",
   "checks": [
     {
       "name": "mirror renders durable draft evidence",
-      "status": "fail",
+      "status": "pass",
       "evidence": {
-        "draftPresent": false
+        "draftPresent": true
       }
     },
     {
-      "name": "mirror renders exact proposed recipient and payload",
-      "status": "fail",
+      "name": "mirror renders exact proposed recipient, subject and status",
+      "status": "pass",
       "evidence": {
-        "proposedArgsPresent": false
+        "proposedArgsPresent": true
       }
     },
     {
@@ -27,7 +27,7 @@
           "args": {
             "type": "doc",
             "title": "Work order WO-REVIEW-MIRROR: review",
-            "content": "# WO-REVIEW-MIRROR: review\n\n**WAITING ON HUMAN: 2-send (mail.send)**\n\n## Constraints\n\n- Do not offer a refund\n\n## Steps\n\n| # | Step | Kind | Status |\n|---|---|---|---|\n| 1 | Draft response (draft) | reversible | DONE |\n| 2 | Send response (mail.send) | COMMIT [allowlist] | WAITING ON HUMAN |\n\n## Ledger\n\n| Step / tool | Status | Approved by | External id |\n|---|---|---|---|\n| 2-send / mail.send | PROPOSED | - | - |\n\n_Mirror of SQLite. SQLite is truth; this document can lag._\n"
+            "content": "# WO-REVIEW-MIRROR: review\n\n**WAITING ON HUMAN: 2-send (mail.send)**\n\n## Constraints\n\n- Do not offer a refund\n\n## Steps\n\n| # | Step | Kind | Status |\n|---|---|---|---|\n| 1 | Draft response (draft) | reversible | DONE |\n| 2 | Send response (mail.send) | COMMIT [allowlist] | WAITING ON HUMAN |\n\n## Draft\n\n> UNIQUE_DRAFT_EVIDENCE\n\n## Proposed action\n\nmail.send to review@example.invalid: \"Unique review proposal\" (PROPOSED)\n\n## Ledger\n\n| Step / tool | Status | Approved by | External id |\n|---|---|---|---|\n| 2-send / mail.send | PROPOSED | - | - |\n\n_Mirror of SQLite. SQLite is truth; this document can lag._\n"
           }
         }
       ]
@@ -87,7 +87,7 @@
   ],
   "summary": {
     "total": 9,
-    "passed": 1,
-    "failed": 8
+    "passed": 3,
+    "failed": 6
   }
 }
