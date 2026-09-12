@@ -30,8 +30,8 @@ import {
   getWorkOrder,
   pendingApproval,
 } from "../core/index.js";
-import { outboxRows } from "../core/inspect.js";
 import { STATE_DIR, runIdFromThreadKey } from "../core/state.js";
+import { mirrorSoon } from "../mirror/index.js";
 import type { workorderTask } from "../trigger/workorder.js";
 
 function required(name: string): string {
@@ -99,11 +99,15 @@ function ApprovalCard(props: StepRef) {
   const step = wo.steps.find((s) => s.id === props.stepId);
   const entry = wo.commits.find((e) => e.idempotencyKey.startsWith(`${wo.id}:${props.stepId}:`));
   const args = (entry?.args ?? {}) as Record<string, unknown>;
-  const preview = typeof args.body === "string" ? args.body : JSON.stringify(args, null, 2);
+  const preview =
+    typeof args.body === "string"
+      ? `To: ${String(args.to)}\nSubject: ${String(args.subject)}\n\n${args.body}`
+      : JSON.stringify(args, null, 2);
   const ref: StepRef = { woId: props.woId, stepId: props.stepId };
+  const unknown = entry?.status === "outcome_unknown";
   return (
     <Message accent={ACCENT.wait}>
-      <Header>{`Approval needed: ${step?.name ?? props.stepId}`}</Header>
+      <Header>{unknown ? `Outcome unknown: ${step?.name ?? props.stepId}` : `Awaiting approval: ${step?.name ?? props.stepId}`}</Header>
       <Fields>
         <Field label="Tool">{entry?.tool ?? step?.tool ?? "unknown"}</Field>
         <Field label="Target">{String(args.to ?? args.workOrder ?? wo.id)}</Field>
@@ -130,6 +134,11 @@ function ApprovalCard(props: StepRef) {
   );
 }
 
+function receipts(woId: string): string {
+  const n = getWorkOrder(woId).commits.filter((e) => e.status === "committed").length;
+  return `${n} receipt${n === 1 ? "" : "s"} on ${woId}`;
+}
+
 const notice = (thread: Thread, accent: string, title: string, body: string, note: string) =>
   thread.post(<NoticeCard accent={accent} title={title} body={body} note={note} />);
 
@@ -148,13 +157,30 @@ async function runJob(thread: Thread, woId: string): Promise<void> {
   const handle = await tasks.trigger<typeof workorderTask>("workorder", { woId }, { tags: [`wo:${woId}`], ttl: 0 });
   log(`trigger ${woId} -> ${handle.id}`);
   let status = "UNKNOWN";
-  for await (const run of runs.subscribeToRun(handle.id)) {
-    if (TERMINAL.has(run.status)) {
-      status = run.status;
-      break;
+  let last = "";
+  // A run stuck in QUEUED almost always means no dev worker is connected; say so instead of going silent.
+  const queuedWarning = setTimeout(() => {
+    if (last === "QUEUED" || last === "PENDING_VERSION" || last === "") {
+      log(`run ${handle.id} still ${last || "not started"} after 10s; is \`trigger dev\` running?`);
+      void notice(thread, ACCENT.wait, "Queued", "Waiting for a worker to pick this up.", "Progress is kept.").catch(() => {});
     }
+  }, 10_000);
+  try {
+    for await (const run of runs.subscribeToRun(handle.id)) {
+      if (run.status !== last) {
+        log(`run ${handle.id} ${last || "-"} -> ${run.status}`);
+        last = run.status;
+      }
+      if (TERMINAL.has(run.status)) {
+        status = run.status;
+        break;
+      }
+    }
+  } finally {
+    clearTimeout(queuedWarning);
   }
   const wo = getWorkOrder(woId);
+  mirrorSoon(wo);
   log(`run ${handle.id} ${status}: ${wo.steps.map((s) => `${s.id}=${s.status}`).join(" ")}`);
 
   if (status !== "COMPLETED") {
@@ -163,7 +189,7 @@ async function runJob(thread: Thread, woId: string): Promise<void> {
         woId={woId}
         title={`Interrupted (${status})`}
         accent={ACCENT.wait}
-        note="Progress is kept. Mention me again in this thread to resume from here."
+        note="Progress kept. Mention me to resume."
       />,
     );
     return;
@@ -174,12 +200,13 @@ async function runJob(thread: Thread, woId: string): Promise<void> {
     return;
   }
   const stopped = wo.steps.find((s) => s.status === "rejected" || s.status === "blocked" || s.status === "failed");
+  const allDone = wo.steps.every((s) => s.status === "done" || s.status === "committed");
   await thread.post(
     <StatusCard
       woId={woId}
-      title={stopped ? `Stopped at ${stopped.id}` : "Finished"}
-      accent={stopped ? ACCENT.stop : ACCENT.ok}
-      note={`Outbox: ${outboxRows().length} message(s)`}
+      title={stopped ? `Stopped at ${stopped.id}` : allDone ? "Finished" : "Paused"}
+      accent={stopped ? ACCENT.stop : allDone ? ACCENT.ok : ACCENT.wait}
+      note={receipts(woId)}
     />,
   );
 }
@@ -188,32 +215,37 @@ async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<v
   log(`approve click ${ref.woId}/${ref.stepId} by ${actor}`);
   try {
     const result = await commit(ref.woId, ref.stepId, actor);
+    mirrorSoon(getWorkOrder(ref.woId));
     if (result.reused) {
       await notice(
         thread,
         ACCENT.ok,
         "Already committed",
-        `\`${ref.stepId}\` was already sent. Same receipt: \`${result.externalId}\`. Nothing was sent again.`,
-        `Outbox: ${outboxRows().length} message(s)`,
+        `Same receipt \`${result.externalId}\`. Nothing sent again.`,
+        receipts(ref.woId),
+      );
+      return;
+    }
+    if (result.status === "outcome_unknown") {
+      await notice(
+        thread,
+        ACCENT.wait,
+        "Outcome unknown",
+        `\`${ref.stepId}\` may or may not have been sent. Approve again after 30s to check the outbox before any resend.`,
+        receipts(ref.woId),
       );
       return;
     }
     if (result.status !== "committed") {
-      await notice(
-        thread,
-        ACCENT.wait,
-        `Commit ${result.status}`,
-        `\`${ref.stepId}\` did not confirm a send. It will not be retried blindly.`,
-        `Outbox: ${outboxRows().length} message(s)`,
-      );
+      await notice(thread, ACCENT.wait, "Send in progress", `\`${ref.stepId}\` is already being sent. Not sending again.`, receipts(ref.woId));
       return;
     }
     await notice(
       thread,
       ACCENT.ok,
       "Committed",
-      `\`${ref.stepId}\` approved by ${who(actor)}. Receipt: \`${result.externalId}\``,
-      `Outbox: ${outboxRows().length} message(s)`,
+      `Approved by ${who(actor)}. Receipt \`${result.externalId}\``,
+      receipts(ref.woId),
     );
     await runJob(thread, ref.woId);
   } catch (err) {
@@ -238,7 +270,7 @@ async function onApprove(thread: Thread, actor: string, ref: StepRef): Promise<v
 async function onDeny(thread: Thread, actor: string, ref: StepRef): Promise<void> {
   log(`deny click ${ref.woId}/${ref.stepId} by ${actor}`);
   try {
-    deny(ref.woId, ref.stepId, actor);
+    mirrorSoon(deny(ref.woId, ref.stepId, actor));
     await notice(
       thread,
       ACCENT.stop,
@@ -300,7 +332,7 @@ channel.onMention(async ({ thread, message }) => {
     const recorded = wo.steps.filter((s) => s.status === "done" || s.status === "committed");
     if (recorded.length === wo.steps.length) {
       await thread.post(
-        <StatusCard woId={woId} title="Finished" accent={ACCENT.ok} note={`Outbox: ${outboxRows().length} message(s)`} />,
+        <StatusCard woId={woId} title="Finished" accent={ACCENT.ok} note={receipts(woId)} />,
       );
       return;
     }

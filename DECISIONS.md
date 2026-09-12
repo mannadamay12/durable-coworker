@@ -310,3 +310,42 @@ Doc ids live in `state/mirror-docs.json`, not SQLite, so core stays free of Ambi
 
 Rules out: a demo that depends on Ambiguous being reachable. A kill between doc creation
 and the id write leaves an orphan doc.
+
+## D30. Planner step ids are rewritten to `N-slug`
+
+`plan()` ignores the model's id beyond its slug and assigns `${position}-${slug}` with only
+`[a-z0-9-]`. Ledger lookups match on the `${woId}:${stepId}:` prefix, so a colon, a duplicate,
+or an empty id from the model could alias another step's receipt.
+
+Rules out: model-chosen step ids reaching the ledger verbatim.
+
+## D31. `outcome_unknown` stays pending for a human, never auto-resolved
+
+`pendingApproval` includes `outcome_unknown` entries, so the approval card is re-posted with an
+"Outcome unknown" header. Approving again after the 30s stale window reconciles against the
+outbox before any resend. The `outcome_unknown` write can never overwrite `committed`.
+
+Rules out: a work order reporting "Finished" while a send is unconfirmed.
+
+## D32. The Trigger.dev task mirrors every 1s while running; listener mirrors after commit and deny
+
+Core cannot import the mirror (invariant 7), so the callers drive it. Stub customer data is
+aligned to `scenarios/customer-success.json` (Northwind Logistics, Dana Okafor, INC-4471).
+
+Rules out: the Ambiguous doc lagging a kill by more than about a second.
+
+## D33. AG-UI companion viewer cut
+
+Not built. 15:18 with submission at 15:30; the mirror doc is the only live view of persisted state.
+
+## D34. Verification follows the captured source, including uncommitted changes
+
+While main is being edited in parallel, a commit SHA alone does not identify the tested
+implementation. Review evidence records source hashes and whether a check asserts a
+desired invariant or intentionally reproduces an existing defect. A fixed defect can
+therefore break an old characterization assertion without being a regression.
+
+Rules out: applying earlier passing results to later edits, treating imported recovery
+JSON as tested engine state, or calling a characterization suite a correctness gate
+without updating its expectations. This is a verification policy; it introduces no
+application behavior or new runtime architecture.

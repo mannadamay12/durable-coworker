@@ -16,30 +16,30 @@ type ReversibleTool = (ctx: ReversibleContext) => Promise<string>;
 
 // Research is a hardcoded blob (PRD cut list: Exa).
 const RESEARCH: Record<string, string> = {
-  "1-gather-thread-context":
-    `${CUSTOMER.name} lost shipment tracking for 3 hours this morning. ` +
-    "They need a written update before their 17:00 ops review.",
+  account:
+    `${CUSTOMER.name}: ${CUSTOMER.person} (VP Ops, ${CUSTOMER.contact}) wants a written update ` +
+    "before their exec review, out by 17:00 PT today. Finance: no credit or refund promises.",
   default:
-    "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. " +
-    "Fixed and monitored since 12:10. No data lost; events replayed by 12:40.",
+    "INC-4471: webhook delivery down Sept 11 14:05-17:10 UTC. Root cause: expired TLS cert on the " +
+    "webhook egress proxy in us-east-2. Cert rotated 17:10 UTC; 18,240 events replayed by 18:30 UTC.",
 };
 
 const reversibleTools: Record<string, ReversibleTool> = {
   search: async ({ step }) => {
     await pause();
-    return RESEARCH[step.id] ?? RESEARCH.default;
+    return /account|context|customer/.test(step.id) ? RESEARCH.account : RESEARCH.default;
   },
   draft: async ({ wo }) => {
     await pause();
     return [
-      `Hi Dana,`,
+      `Hi ${CUSTOMER.person.split(" ")[0]},`,
       ``,
-      `Shipment tracking was unavailable from 09:12 to 12:04 UTC today. The cause was an ` +
-        `expired certificate on our tracking gateway. It has been fixed, no data was lost, ` +
-        `and all tracking events were replayed by 12:40.`,
+      `Webhook delivery to ${CUSTOMER.name} was down on Sept 11 from 14:05 to 17:10 UTC (INC-4471). ` +
+        `The cause was an expired TLS certificate on our webhook egress proxy. The certificate was ` +
+        `rotated at 17:10 UTC and all 18,240 delayed shipment status events were replayed by 18:30 UTC.`,
       ``,
-      `We are adding certificate expiry alerts so this cannot recur silently. I will send ` +
-        `the full incident report before your ops review.`,
+      `We are adding certificate expiry alerting so this cannot recur silently, and we will share ` +
+        `the postmortem once it is final.`,
       ``,
       `Reference: ${wo.id}`,
     ].join("\n");
