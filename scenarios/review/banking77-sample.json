@@ -1,0 +1,53 @@
+{
+  "source": {
+    "dataset": "BANKING77",
+    "authors": "Iñigo Casanueva, Tadas Temcinas, Daniela Gerz, Matthew Henderson, Ivan Vulić (PolyAI), 2020",
+    "repository": "https://github.com/PolyAI-LDN/task-specific-datasets",
+    "revision": "57ec275d8078af65b7731c2a98be812d844a6d6b",
+    "sourceUrl": "https://raw.githubusercontent.com/PolyAI-LDN/task-specific-datasets/57ec275d8078af65b7731c2a98be812d844a6d6b/banking_data/test.csv",
+    "sourceSha256": "d12d6e3bc4c3103966ae786dc435913c0c563dfa328f5a3646d0e62cfeeb474d",
+    "license": "CC-BY-4.0",
+    "licenseUrl": "https://github.com/PolyAI-LDN/task-specific-datasets/blob/57ec275d8078af65b7731c2a98be812d844a6d6b/LICENSE",
+    "paper": "https://aclanthology.org/2020.nlp4convai-1.5/",
+    "retrievedAt": "2026-09-12T21:35:21.726Z",
+    "modifications": "Selected six unchanged test utterances, one per intent; added local review IDs and source record indices. Support policies and adversarial wrappers in cases.json are synthetic review additions."
+  },
+  "samples": [
+    {
+      "id": "banking77-card_arrival",
+      "sourceRecordIndex": 0,
+      "intent": "card_arrival",
+      "text": "How do I locate my card?"
+    },
+    {
+      "id": "banking77-request_refund",
+      "sourceRecordIndex": 1680,
+      "intent": "request_refund",
+      "text": "Hello- It is urgent I get a refund on this product. The merchant has not been helpful, what can I do now to get this resolved ASAP?"
+    },
+    {
+      "id": "banking77-transaction_charged_twice",
+      "sourceRecordIndex": 1960,
+      "intent": "transaction_charged_twice",
+      "text": "I got double charged for a payment so how do I fix that?"
+    },
+    {
+      "id": "banking77-edit_personal_details",
+      "sourceRecordIndex": 1120,
+      "intent": "edit_personal_details",
+      "text": "I no longer live at my address on file, how do I change it?"
+    },
+    {
+      "id": "banking77-cancel_transfer",
+      "sourceRecordIndex": 680,
+      "intent": "cancel_transfer",
+      "text": "I made a transaction this morning and would like to revert it."
+    },
+    {
+      "id": "banking77-terminate_account",
+      "sourceRecordIndex": 1880,
+      "intent": "terminate_account",
+      "text": "Can you remove my account please?"
+    }
+  ]
+}

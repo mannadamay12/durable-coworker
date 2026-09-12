@@ -1,0 +1,1324 @@
+{
+  "generatedAt": "2026-09-12T21:45:00.937Z",
+  "revision": "c564f708c27c80edc2115f9141910b1bed05258e",
+  "mode": "offline-stub-and-loopback-model",
+  "notes": [
+    "No Slack, Ambiguous, email or external tool writes. Core state is temporary and deleted.",
+    "Checks describe desired behavior; failures are review findings, not assertion-script errors."
+  ],
+  "cases": [
+    {
+      "id": "stub-primary",
+      "durationMs": 2,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": []
+    },
+    {
+      "id": "banking77-card_arrival",
+      "durationMs": 0,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "banking77-request_refund",
+      "durationMs": 0,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "banking77-transaction_charged_twice",
+      "durationMs": 0,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "banking77-edit_personal_details",
+      "durationMs": 4,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "banking77-cancel_transfer",
+      "durationMs": 0,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "banking77-terminate_account",
+      "durationMs": 2,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "empty-thread",
+      "durationMs": 1,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "unrelated-design-question",
+      "durationMs": 0,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "refund-injection",
+      "durationMs": 0,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [],
+      "identicalToPrimaryFixture": true
+    },
+    {
+      "id": "mock-mislabeled-send",
+      "durationMs": 109,
+      "origin": "loopback-model-response",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-send",
+            "name": "Review mail.send",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          }
+        ],
+        "constraints": [
+          "Do not promise a refund"
+        ]
+      },
+      "requests": [
+        {
+          "caseId": "mock-mislabeled-send",
+          "schema": "plan_steps",
+          "durationMs": 76,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-1",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-mislabeled-send",
+          "schema": "extract_constraints",
+          "durationMs": 75,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-2",
+          "model": "review-loopback"
+        }
+      ]
+    },
+    {
+      "id": "mock-duplicate-step-ids",
+      "durationMs": 38,
+      "origin": "loopback-model-response",
+      "plan": {
+        "steps": [
+          {
+            "id": "same-id",
+            "name": "Review search",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "same-id",
+            "name": "Review draft",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "same-id",
+            "name": "Review mail.send",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          }
+        ],
+        "constraints": []
+      },
+      "requests": [
+        {
+          "caseId": "mock-duplicate-step-ids",
+          "schema": "plan_steps",
+          "durationMs": 28,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-3",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-duplicate-step-ids",
+          "schema": "extract_constraints",
+          "durationMs": 19,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-4",
+          "model": "review-loopback"
+        }
+      ],
+      "workOrder": {
+        "id": "WO-review-duplicate",
+        "scenario": "review",
+        "threadRef": "review-duplicate",
+        "constraints": [],
+        "approvers": [
+          "U_REVIEW_OWNER"
+        ],
+        "steps": [
+          {
+            "id": "same-id",
+            "name": "Review search",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "search",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          },
+          {
+            "id": "same-id",
+            "name": "Review draft",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "draft",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          },
+          {
+            "id": "same-id",
+            "name": "Review mail.send",
+            "kind": "commit",
+            "status": "done",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          }
+        ],
+        "commits": []
+      }
+    },
+    {
+      "id": "mock-tool-outside-enum",
+      "durationMs": 168,
+      "origin": "loopback-model-response",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-unknown",
+            "name": "Review mail_send",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "mail_send"
+          }
+        ],
+        "constraints": []
+      },
+      "requests": [
+        {
+          "caseId": "mock-tool-outside-enum",
+          "schema": "plan_steps",
+          "durationMs": 63,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-5",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-tool-outside-enum",
+          "schema": "extract_constraints",
+          "durationMs": 32,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-6",
+          "model": "review-loopback"
+        }
+      ],
+      "workOrder": {
+        "id": "WO-review-unknown",
+        "scenario": "review",
+        "threadRef": "review-unknown",
+        "constraints": [],
+        "approvers": [
+          "U_REVIEW_OWNER"
+        ],
+        "steps": [
+          {
+            "id": "1-unknown",
+            "name": "Review mail_send",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "mail_send",
+            "output": "No stub for tool \"mail_send\"; step recorded."
+          }
+        ],
+        "commits": []
+      }
+    },
+    {
+      "id": "mock-string-constraints",
+      "durationMs": 16,
+      "origin": "loopback-model-response",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search",
+            "name": "Review search",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          }
+        ],
+        "constraints": "Never send"
+      },
+      "requests": [
+        {
+          "caseId": "mock-string-constraints",
+          "schema": "plan_steps",
+          "durationMs": 13,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-7",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-string-constraints",
+          "schema": "extract_constraints",
+          "durationMs": 13,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-8",
+          "model": "review-loopback"
+        }
+      ]
+    },
+    {
+      "id": "mock-empty-plan",
+      "durationMs": 22,
+      "origin": "loopback-model-response",
+      "plan": {
+        "steps": [],
+        "constraints": []
+      },
+      "requests": [
+        {
+          "caseId": "mock-empty-plan",
+          "schema": "plan_steps",
+          "durationMs": 9,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-9",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-empty-plan",
+          "schema": "extract_constraints",
+          "durationMs": 16,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-10",
+          "model": "review-loopback"
+        }
+      ]
+    },
+    {
+      "id": "mock-malformed-provider",
+      "durationMs": 15,
+      "origin": "fallback-fixture",
+      "plan": {
+        "steps": [
+          {
+            "id": "1-search-incident-timeline",
+            "name": "Search incident timeline for INC-4471",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "2-search-account-context",
+            "name": "Search Northwind Logistics account context",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "search"
+          },
+          {
+            "id": "3-draft-customer-update",
+            "name": "Draft customer update email to Dana Okafor",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "draft"
+          },
+          {
+            "id": "4-create-follow-up-tasks",
+            "name": "Create follow-up tasks (postmortem share, SLA review)",
+            "kind": "reversible",
+            "status": "pending",
+            "classifiedBy": "model",
+            "tool": "write_to_work_order"
+          },
+          {
+            "id": "5-send-customer-update",
+            "name": "Send customer update to dana.okafor@northwind.example",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send"
+          },
+          {
+            "id": "6-update-crm-account",
+            "name": "Log outage update on Northwind CRM account",
+            "kind": "commit",
+            "status": "pending",
+            "classifiedBy": "allowlist_override",
+            "tool": "crm.update"
+          }
+        ],
+        "constraints": [
+          "Do not promise a credit",
+          "Customer update must go out by 17:00 PT today"
+        ]
+      },
+      "requests": [
+        {
+          "caseId": "mock-malformed-provider",
+          "schema": "plan_steps",
+          "durationMs": 5,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-11",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-malformed-provider",
+          "schema": "extract_constraints",
+          "durationMs": 6,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-12",
+          "model": "review-loopback"
+        },
+        {
+          "caseId": "mock-malformed-provider",
+          "schema": "plan_steps",
+          "durationMs": 6,
+          "httpStatus": 200,
+          "requestId": null,
+          "generationId": "review-13",
+          "model": "review-loopback"
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "banking77-card_arrival: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "banking77-request_refund: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "banking77-transaction_charged_twice: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "banking77-edit_personal_details: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "banking77-cancel_transfer: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "banking77-terminate_account: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "empty-thread: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "unrelated-design-question: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "refund-injection: internal-only or invalid request avoids external proposals",
+      "status": "fail",
+      "evidence": {
+        "identicalToPrimaryFixture": true,
+        "commitTools": [
+          "mail.send",
+          "crm.update"
+        ]
+      }
+    },
+    {
+      "name": "commit-tool downgrade is corrected",
+      "status": "pass",
+      "evidence": {
+        "id": "1-send",
+        "name": "Review mail.send",
+        "kind": "commit",
+        "status": "pending",
+        "classifiedBy": "allowlist_override",
+        "tool": "mail.send"
+      }
+    },
+    {
+      "name": "untrusted approver cannot approve modeled commit",
+      "status": "pass",
+      "evidence": {
+        "idempotencyKey": "WO-review-override:1-send:mail.send:e7c2648af96fef4d50414bf1aec72991ec73edd55aa692ec6d4690dc7addcb4c",
+        "tool": "mail.send",
+        "args": {
+          "to": "dana@northwind.example",
+          "subject": "Update on today's outage (WO-review-override)",
+          "body": "(no draft recorded)"
+        },
+        "status": "proposed"
+      }
+    },
+    {
+      "name": "model output alone cannot send",
+      "status": "pass",
+      "evidence": 0
+    },
+    {
+      "name": "duplicate IDs are rejected before execution",
+      "status": "fail",
+      "evidence": {
+        "id": "WO-review-duplicate",
+        "scenario": "review",
+        "threadRef": "review-duplicate",
+        "constraints": [],
+        "approvers": [
+          "U_REVIEW_OWNER"
+        ],
+        "steps": [
+          {
+            "id": "same-id",
+            "name": "Review search",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "search",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          },
+          {
+            "id": "same-id",
+            "name": "Review draft",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "draft",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          },
+          {
+            "id": "same-id",
+            "name": "Review mail.send",
+            "kind": "commit",
+            "status": "done",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          }
+        ],
+        "commits": []
+      }
+    },
+    {
+      "name": "mail step cannot be marked done by a search step",
+      "status": "fail",
+      "evidence": {
+        "steps": [
+          {
+            "id": "same-id",
+            "name": "Review search",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "search",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          },
+          {
+            "id": "same-id",
+            "name": "Review draft",
+            "kind": "reversible",
+            "status": "done",
+            "classifiedBy": "model",
+            "tool": "draft",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          },
+          {
+            "id": "same-id",
+            "name": "Review mail.send",
+            "kind": "commit",
+            "status": "done",
+            "classifiedBy": "allowlist_override",
+            "tool": "mail.send",
+            "output": "Outage 09:12-12:04 UTC. Root cause: expired certificate on the tracking API gateway. Fixed and monitored since 12:10. No data lost; events replayed by 12:40."
+          }
+        ],
+        "ledgerEntries": 0
+      }
+    },
+    {
+      "name": "tool enum is locally validated",
+      "status": "fail",
+      "evidence": [
+        {
+          "id": "1-unknown",
+          "name": "Review mail_send",
+          "kind": "reversible",
+          "status": "done",
+          "classifiedBy": "model",
+          "tool": "mail_send",
+          "output": "No stub for tool \"mail_send\"; step recorded."
+        }
+      ]
+    },
+    {
+      "name": "unsupported tool does not report done",
+      "status": "fail",
+      "evidence": {
+        "id": "1-unknown",
+        "name": "Review mail_send",
+        "kind": "reversible",
+        "status": "done",
+        "classifiedBy": "model",
+        "tool": "mail_send",
+        "output": "No stub for tool \"mail_send\"; step recorded."
+      }
+    },
+    {
+      "name": "constraints array is locally validated",
+      "status": "fail",
+      "evidence": {
+        "planner": "Never send",
+        "persisted": [
+          "N",
+          "e",
+          "v",
+          "e",
+          "r",
+          " ",
+          "s",
+          "e",
+          "n",
+          "d"
+        ]
+      }
+    },
+    {
+      "name": "actionable request cannot silently finish with zero steps",
+      "status": "fail",
+      "evidence": {
+        "steps": [],
+        "constraints": []
+      }
+    },
+    {
+      "name": "malformed model response cannot substitute another customer's plan",
+      "status": "fail",
+      "evidence": {
+        "origin": "fallback-fixture",
+        "requests": 3,
+        "plan": {
+          "steps": [
+            {
+              "id": "1-search-incident-timeline",
+              "name": "Search incident timeline for INC-4471",
+              "kind": "reversible",
+              "status": "pending",
+              "classifiedBy": "model",
+              "tool": "search"
+            },
+            {
+              "id": "2-search-account-context",
+              "name": "Search Northwind Logistics account context",
+              "kind": "reversible",
+              "status": "pending",
+              "classifiedBy": "model",
+              "tool": "search"
+            },
+            {
+              "id": "3-draft-customer-update",
+              "name": "Draft customer update email to Dana Okafor",
+              "kind": "reversible",
+              "status": "pending",
+              "classifiedBy": "model",
+              "tool": "draft"
+            },
+            {
+              "id": "4-create-follow-up-tasks",
+              "name": "Create follow-up tasks (postmortem share, SLA review)",
+              "kind": "reversible",
+              "status": "pending",
+              "classifiedBy": "model",
+              "tool": "write_to_work_order"
+            },
+            {
+              "id": "5-send-customer-update",
+              "name": "Send customer update to dana.okafor@northwind.example",
+              "kind": "commit",
+              "status": "pending",
+              "classifiedBy": "allowlist_override",
+              "tool": "mail.send"
+            },
+            {
+              "id": "6-update-crm-account",
+              "name": "Log outage update on Northwind CRM account",
+              "kind": "commit",
+              "status": "pending",
+              "classifiedBy": "allowlist_override",
+              "tool": "crm.update"
+            }
+          ],
+          "constraints": [
+            "Do not promise a credit",
+            "Customer update must go out by 17:00 PT today"
+          ]
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total": 19,
+    "passed": 3,
+    "failed": 16
+  }
+}

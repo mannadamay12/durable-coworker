@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Durable Coworker · Evidence</title>
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#f5f4f0,#171a18);--surface:light-dark(#fff,#212622);--ink:light-dark(#16241d,#e5eee7);--muted:light-dark(#536259,#b6c5bb);--line:light-dark(#d9e2db,#3e4a42);--green:light-dark(#166c45,#8ad4ae);--amber:light-dark(#865000,#ffd49a)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}main{max-width:1250px;margin:auto;padding:28px}header{display:flex;gap:20px;justify-content:space-between;align-items:center;margin-bottom:24px}h1{font-size:26px;letter-spacing:-.7px;margin:2px 0}h2{font-size:18px;margin:0 0 14px}p{margin:6px 0}.eyebrow{font-size:12px;font-weight:650;letter-spacing:1.5px;text-transform:uppercase;color:var(--green)}.subtle{color:var(--muted);font-size:13px}.badge{display:inline-block;padding:4px 9px;border:1px solid var(--line);border-radius:20px;font-size:12px}.toolbar,.controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.toolbar{padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:18px}select,button{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px 12px}button{cursor:pointer}button:disabled{opacity:.4;cursor:default}input[type=range]{min-width:120px;flex:1;accent-color:var(--green)}.controls{margin-bottom:18px}.phase{margin:22px 0}.phase h2{font-size:23px;margin-bottom:4px}.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}.panel{padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}.value{font-size:30px;line-height:1.2;font-weight:600;margin-bottom:4px}.metric{padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px}.step{display:flex;align-items:flex-start;gap:9px;padding:10px 0;border-bottom:1px solid var(--line)}.dot{width:10px;height:10px;margin-top:6px;border-radius:50%;background:var(--line);flex-shrink:0}.done .dot,.committed .dot{background:var(--green)}.waiting_human .dot,.running .dot{background:var(--amber)}.step-name{font-size:14px}.mono,pre{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap}details{margin:14px 0}summary{cursor:pointer;font-weight:550}.constraint{padding:8px 10px;background:var(--bg);border-radius:6px;margin:7px 0}.entry{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}#warnings{color:var(--amber);margin:12px 0}footer{margin-top:22px;border-top:1px solid var(--line);padding-top:15px}.empty{padding:18px 0;color:var(--muted)}[hidden]{display:none!important}@media(max-width:850px){.grid{grid-template-columns:1fr}main{padding:16px}header{align-items:flex-start}.toolbar{align-items:flex-start}h1{font-size:23px}}
+</style></head><body><main>
+<header><div><div class="eyebrow">Durable Coworker</div><h1>The evidence survives the worker.</h1><p class="subtle">Progress, human decisions, and side effects each have their own record.</p></div><span class="badge">Read-only viewer</span></header>
+<div class="toolbar"><label for="mode">View</label><select id="mode"><option value="replay">Recorded experiment</option><option value="live">Live state</option></select><label for="wo">Work order</label><select id="wo"></select><span id="timestamp" class="subtle"></span></div>
+<div class="controls" id="replay-controls"><button id="previous" aria-label="Previous checkpoint">← Previous</button><input id="frame" aria-label="Experiment checkpoint" type="range" min="0" max="0" value="0"><button id="next" aria-label="Next checkpoint">Next →</button><span id="position" class="subtle"></span></div>
+<section class="phase" aria-live="polite"><h2 id="phase">Loading evidence…</h2><p id="detail" class="subtle"></p><div id="warnings"></div></section>
+<div class="grid">
+<section class="panel"><h2>01 · Progress</h2><div class="metric"><div id="progress-value" class="value">—</div><div class="subtle">Steps finished, as stored in SQLite</div></div><div id="steps"></div><details><summary>Recorded tool executions</summary><pre id="calls"></pre></details></section>
+<section class="panel"><h2>02 · Human decision</h2><div class="metric"><div id="decision-value" class="value">—</div><div class="subtle">Proposal and approval recorded in the ledger</div></div><div id="constraints"></div><p id="approvers" class="subtle"></p><div id="decisions"></div></section>
+<section class="panel"><h2>03 · Side-effect evidence</h2><div class="metric"><div id="receipt-value" class="value">—</div><div class="subtle">Matching artifacts in the local stub outbox</div></div><div id="receipts"></div><p id="counts" class="subtle"></p></section>
+</div>
+<details class="panel" style="margin-top:16px"><summary>Raw snapshot and smoke-test state</summary><pre id="raw"></pre></details>
+<section class="panel" id="model-probes" hidden style="margin-top:16px"><h2>Model probes · separate experiment</h2><p class="subtle" id="model-provenance"></p><div id="model-requests"></div></section>
+<footer class="subtle"><p id="source"></p><p>Planner telemetry is not stored in this schema. A routed LLM request alone cannot prove a work order advanced. SQLite and the outbox are sampled separately; this viewer does not establish an atomic cross-store snapshot.</p><p id="provenance"></p></footer>
+</main><script>
+const el = id => document.getElementById(id);
+let replay=null, latest=null, index=0, selected='', fingerprint='';
+const add = (parent,tag,text,cls) => {const node=document.createElement(tag);node.textContent=text;if(cls)node.className=cls;parent.append(node);return node};
+const json = data => JSON.stringify(data,null,2);
+function render(){
+ const recorded=el('mode').value==='replay'&&replay;
+ const frame=recorded?replay.frames[index]:null;
+ const state=frame?.snapshot??latest;
+ if(!state)return;
+ el('replay-controls').hidden=!recorded;
+ el('phase').textContent=frame?.label??'Live persisted state';
+ el('detail').textContent=frame?.detail??'Refreshes every second. This view cannot approve, retry, or send.';
+ el('timestamp').textContent='Observed '+new Date(state.capturedAt).toLocaleTimeString();
+ el('position').textContent=recorded?`${index+1} / ${replay.frames.length}`:'';
+ el('frame').max=recorded?replay.frames.length-1:0;el('frame').value=index;
+ el('previous').disabled=index===0;el('next').disabled=!recorded||index===replay.frames.length-1;
+ if(!state.workOrders.some(w=>w.id===selected))selected=state.workOrders[0]?.id??'';
+ el('wo').replaceChildren();for(const w of state.workOrders){const o=add(el('wo'),'option',w.id);o.value=w.id;}el('wo').value=selected;
+ const wo=state.workOrders.find(w=>w.id===selected);
+ const entries=state.ledger.filter(e=>e.wo_id===selected);
+ const receipts=state.outbox.filter(r=>entries.some(e=>r.tool===e.tool&&r.body.split('\n').includes('X-Idempotency-Key: '+e.idempotency_key)));
+ const steps=wo?.steps??[];
+ el('progress-value').textContent=`${steps.filter(s=>['done','committed'].includes(s.status)).length} / ${steps.length}`;
+ el('decision-value').textContent=entries.length?entries.map(e=>e.status).join(', '):'No proposal';
+ el('receipt-value').textContent=String(receipts.length);
+ el('steps').replaceChildren();for(const step of steps){const row=add(el('steps'),'div','','step '+step.status);add(row,'span','','dot');const body=add(row,'div','');add(body,'div',step.name,'step-name');add(body,'div',`${step.status} · ${step.tool??'no tool'}`,'subtle');if(step.output){const d=add(body,'details','');add(d,'summary','Persisted output');add(d,'pre',step.output)}}
+ if(!steps.length)add(el('steps'),'p','No work order found. Smoke progress, if any, is shown below.','empty');
+ el('constraints').replaceChildren();for(const c of wo?.constraints??[])add(el('constraints'),'div',c,'constraint');
+ el('approvers').textContent='Allowlisted: '+(wo?.approvers?.join(', ')||'none');
+ el('decisions').replaceChildren();for(const entry of entries){const d=add(el('decisions'),'div','','entry');add(d,'p',`${entry.tool} · ${entry.status}`);add(d,'p','Approved by: '+(entry.approved_by??'no one'),'subtle');const args=add(d,'details','');add(args,'summary','Exact proposed action');add(args,'pre',json(entry.args));const key=add(d,'details','');add(key,'summary','Idempotency key');add(key,'pre',entry.idempotency_key);}
+ el('receipts').replaceChildren();for(const receipt of receipts){const d=add(el('receipts'),'div','','entry');add(d,'p',receipt.id,'mono');add(d,'p',receipt.sentAt,'subtle');const artifact=add(d,'details','');add(artifact,'summary','Stored artifact');add(artifact,'pre',receipt.body);}
+ if(!receipts.length)add(el('receipts'),'p','No matching side-effect artifact.','empty');
+ el('counts').textContent=`Ledger receipts: ${entries.filter(e=>e.external_id).length} · Entire outbox: ${state.outbox.length}`;
+ el('calls').textContent=json(state.toolCalls.filter(c=>c.wo_id===selected));
+ el('raw').textContent=json(state);el('warnings').textContent=state.warnings.join(' ');
+ el('source').textContent='State directory: '+state.stateDir;
+ el('provenance').textContent=recorded?'Recorded from actual isolated core operations using stub tools; no live Slack or model call is represented.':'Source is the directory supplied to the observer. Outbox records are stub artifacts, not proof of real email delivery.';
+}
+async function loadLive(){try{const r=await fetch('/api/snapshot');if(!r.ok)throw new Error('Snapshot unavailable');latest=await r.json();const next=JSON.stringify({...latest,capturedAt:undefined});if(el('mode').value==='live'&&next!==fingerprint){render();fingerprint=next}else if(el('mode').value==='live')el('timestamp').textContent='Observed '+new Date(latest.capturedAt).toLocaleTimeString();}catch(e){el('warnings').textContent=e.message+'; displaying the last available snapshot.'}}
+el('mode').addEventListener('change',()=>{fingerprint='';render()});el('wo').addEventListener('change',()=>{selected=el('wo').value;render()});
+el('frame').addEventListener('input',()=>{index=Number(el('frame').value);render()});el('previous').addEventListener('click',()=>{index--;render()});el('next').addEventListener('click',()=>{index++;render()});
+(async()=>{try{const r=await fetch('/api/replay');if(r.ok)replay=await r.json();if(!replay?.frames?.length){replay=null;el('mode').value='live';el('mode').querySelector('[value=replay]').disabled=true}await loadLive();render();setInterval(loadLive,1000);const probeResponse=await fetch('/api/model-probes');if(probeResponse.ok){const probes=await probeResponse.json();if(probes?.requests?.length){el('model-probes').hidden=false;el('model-provenance').textContent=`Captured ${new Date(probes.generatedAt).toLocaleString()} using public/synthetic inputs. These calls belong to different work orders from the replay above.`;for(const request of probes.requests){const d=add(el('model-requests'),'details','');add(d,'summary',`${request.caseId} · ${request.purpose} · HTTP ${request.status} · ${(request.durationMs/1000).toFixed(2)}s`);add(d,'p',`${request.model} via ${request.provider} · ${request.tokens} tokens · $${request.cost?.toFixed(6)??'unknown'}`,'subtle');add(d,'pre',request.generationId)}}}}catch(e){el('warnings').textContent=e.message}})();
+</script></body></html>
