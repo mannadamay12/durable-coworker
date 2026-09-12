@@ -9,6 +9,7 @@ Format: `HH:MM — what changed — what it unblocks or what it cost`
 
 ## Build day
 
+- `15:04` — With explicit user authorization, interacted with Angie in native Slack and captured real UI; new Acme test reached Starting with a persisted two-step plan, but both steps remained pending and no tool/ledger activity was recorded — live initial-card verification added in `notes/review-live-slack.md`; worker completion and new approval unverified
 - `14:54` — Pulled and reviewed `54afa04`, including the new standalone document mirror; worker/listener still have no mirror calls and rendered document omits draft outputs — integration and verification plan updated for the latest merge
 - `14:49` — Three-agent review refreshed through `c564f70`; existing tests pass, but isolated core probes reproduce 9 failures and planner/data probes 16 failed checks (several share one fallback defect); Slack handler probes reproduce false completion/send messages — prioritized fixes and exact repros in `notes/demo-review.md`; review is not a correctness sign-off
 - `14:48` — Added read-only evidence viewer and six-checkpoint local kill/approval/retry replay; desktop/mobile browser checks pass — persisted progress, decisions, receipts and separate captured model calls can be inspected together
