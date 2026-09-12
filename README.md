@@ -26,7 +26,11 @@ Three guarantees, kept separate:
 |---|---|---|
 | Progress | Where was I? | Step list on the work order |
 | Side effect | Did the world already change? | Ledger, keyed by idempotency key |
-| Decision | Did a human already say yes? | Waitpoint completed by a Slack click |
+| Decision | Did a human already say yes? | Ledger approval, written only from a Slack click by an allowlisted user ID |
+
+The worker stops at the proposal and exits; it does not hold a waitpoint open across the
+human wait. The approval click runs the committer and triggers a new run for any
+remaining steps.
 
 The structural move: irreversible tools are never in the model's toolset. The model can
 only write a `proposed` commit into the work order. A committer function with no model
@@ -80,6 +84,8 @@ source changes during the run.
 
 ## Docs
 
+- `SUBMISSION.md` — description, verified evidence, known limits, what was not built
+- `DEMO.md` — filming runbook for the Slack take and the CLI fallback
 - `PRD.md` — scope, data model, build order, demo script
 - `DECISIONS.md` — locked decisions and the reasoning behind them
 - `CLAUDE.md` — invariants and working agreement
